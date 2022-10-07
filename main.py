@@ -6,6 +6,7 @@ from cgi import print_environ
 from copy import deepcopy
 from distutils import errors
 from genericpath import exists
+from tokenize import Number
 from tracemalloc import start
 import typing
 
@@ -846,114 +847,6 @@ def feed_trace(eng, tfirst, data, ticks=[], p_ticks=0, reset_potentials=True):
     return pscores, datainputs
 
 
-def feed_trace_unfold_old(eng, datainputs, pticks=0, reset_potentials=True):
-
-    def feed_trace_once(eng, dinputs, timeat, reset_potentials, pscores, datainputs):
-
-        pscores = {}
-        datainputs = {}
-
-        if reset_potentials:
-            eng.reset_potentials()
-
-        # propagate & capture
-        # for t in datainputs:
-        if len(dinputs) == 0:
-            r, e, a = eng.algo([])
-            for i in a:
-                templist.append(
-                    (tstart+t, i, eng.network.neurones[i].potential))
-        else:
-            r, e, a = eng.algo(datainputs[t])
-            for i in a:
-                templist.append(
-                    (tstart+t, i, eng.network.neurones[i].potential))
-
-        # for t in range(pticks):
-        #     r, e, a = eng.algo([])
-        #     for i in a:
-        #         templist.append((tick, i, eng.network.neurones[i].potential))
-        #     tick += 1
-
-        templist = []
-
-        for i in templist:
-
-            if 'CMP' not in i[1]:
-                if i[0] not in pscores:
-                    pscores[i[0]] = {}
-                if i[1] not in pscores[i[0]]:
-                    pscores[i[0]][i[1]] = round(i[2], 4)
-                else:
-                    pscores[i[0]][i[1]] += round(i[2], 4)
-            else:
-                s = npredict.primeProductWeights(i[1], eng)
-                stotal = i[2]
-
-                for j in s:
-                    try:
-                        if s[j][1]+i[0] not in pscores:
-                            pscores[s[j][1] + i[0]] = {}
-                        if j not in pscores[s[j][1]+i[0]]:
-                            pscores[s[j][1]+i[0]][j] = s[j][0] * stotal
-                        else:
-                            pscores[s[j][1]+i[0]][j] += s[j][0] * stotal
-                    except:
-                        continue
-
-        vals = [x for x in pscores]
-        lowest = min(vals)
-        highest = max(vals)
-
-        for i in range(lowest, highest):
-            if i not in pscores:
-                pscores[i] = {}
-
-        return pscores, datainputs
-
-    tstart = min(datainputs.keys())
-    tfrom = max(datainputs.keys())
-    tto = tfrom + pticks
-
-    # current pscores, datainputs from feed_trace
-    pscores, datainputs = feed_trace_once(
-        eng, datainputs=datainputs, tstart=tstart, reset_potentials=reset_potentials)
-
-    for t in range(tfrom, tto):
-        window = [i for i in pscores if i >= t]
-        scores = {}
-        # scores = []
-
-        for tt in window:
-            for it in pscores[tt]:
-                if tt == tfrom and it in datainputs[tt]:
-                    continue
-                elif pscores[tt][it] >= 1:
-                    # scores.append((it, pscores[tt][it]))
-                    if it not in scores:
-                        scores[it] = pscores[tt][it]
-                    else:
-                        scores[it] += pscores[tt][it]
-
-        datainputs[t+1] = [x for x in scores if scores[x] >= 2]
-
-        print()
-        pp.pprint(datainputs)
-        # print()
-        # pp.pprint(scores)
-        print()
-        pp.pprint(pscores)
-        input(f"{t} {window}")
-
-        print('feeding', datainputs)
-        pscores, datainputs = feed_trace_once(
-            eng, datainputs=datainputs, pticks=pticks, tstart=tstart, reset_potentials=reset_potentials)
-        print('post', datainputs)
-
-    return pscores, datainputs
-
-
-
 ######### main prog starts #########
 args = sys.argv[1:]
 
@@ -1044,100 +937,15 @@ while True:
         print("composite", neurone)
         pp.pprint(npredict.back_trace(propslvl, neurone))
 
-    if command[0] == "sinfer_old":
-        print("sinfer")
-
-        # data = open(command[1]).readlines()
-        # meta = open(command[2]).readlines()
-
-        # c1 = input()
-
-        file_data = f"./dataset/dataset_sin_{command[1]}.csv"
-        file_meta = f"./dataset/meta_sin_{command[1]}.csv"
-
-        data = load_data(file_data, file_meta)
-
-        reset_potentials = True if input(
-            "reset potentials (y/n): ") == 'y' else False
-        first = int(input("first row in file (stream from): "))
-        last = int(input("last row in file (stream to): "))
-        pticks = int(input("post ticks after stream: "))
-        pthres = float(input("potential threshold: "))
-
-        ticks = [x for x in range(first, last)]
-
-        # for i in range(first, last):
-        #     print(i, data[i])
-
-        input(f"\nStream Length: {len(data)}  \nStream Range: {ticks}\n")
-
-        tscores, htraces, datainputs = feed_trace(deepcopy(eng), first, data, ticks=ticks, p_ticks=pticks,
-                                                  pot_threshold=pthres, reset_potentials=reset_potentials)
-
-        print("Params")
-        pp.pprint(eng.network.params)
-
-        print("\nInputs")
-        pp.pprint(datainputs)
-
-        print("\nTScores")
-        pp.pprint(tscores)
-
-        print("\nHTraces")
-        pp.pprint(htraces)
-
-        save = input("save results in filename (nosave, leave empty): ")
-
-        if save != "":
-            jsondump("feedtraces", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "datainputs": datainputs, "tscores_sum": tscores, "htraces": htraces})
-
-    if command[0] == "sinfer_old2":
-        print("sinfer2")
-
-        # data = open(command[1]).readlines()
-        # meta = open(command[2]).readlines()
-
-        # c1 = input()
-
-        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
-        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
-
-        data = load_data(file_data, file_meta)
-
-        reset_potentials = True if input(
-            "reset potentials (y/n): ") == 'y' else False
-        first = int(input("first row in file (stream from): "))
-        last = int(input("last row in file (stream to): "))
-        pticks = int(input("post ticks after stream: "))
-
-        ticks = [x for x in range(first, last)]
-
-        # for i in range(first, last):
-        #     print(i, data[i])
-
-        input(f"\nStream Length: {len(data)}  \nStream Range: {ticks}\n")
-
-        tscores, datainputs = feed_trace(deepcopy(
-            eng), first, data, ticks=ticks, p_ticks=pticks, reset_potentials=reset_potentials)
-
-        print("Params")
-        pp.pprint(eng.network.params)
-
-        print("\nInputs")
-        pp.pprint(datainputs)
-
-        print("\nPScores")
-        pp.pprint(tscores)
-
-        save = input("\nsave results in filename (nosave, leave empty): ")
-
-        if save != "":
-            jsondump("feedtraces2", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "datainputs": datainputs, "tscores_prod": tscores})
-
     if command[0] == "sinfer":
-        print("sinfer2")
+        def inputDef(prompt, defval, casting):
+            x = input(prompt)
+            try:
+                return casting(x)
+            except:
+                return defval
+
+        print("sinfer")
 
         file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
         file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
@@ -1148,7 +956,9 @@ while True:
             "reset potentials (y/n): ") == 'y' else False
         first = int(input("first row in file (stream from): "))
         last = int(input("last row in file (stream to): "))
-        pticks = int(input("post ticks after stream: "))
+        pticks = inputDef("infer length after stream (def 20): ", eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 2): ", eng.network.params['InferRefractory'], int)
+        divergence = inputDef("divergence count (def 3): ", eng.network.params['InferDivergence'], int)
 
         data = {}
 
@@ -1158,28 +968,29 @@ while True:
         del alldata
 
         priories = deepcopy(data)
-
         pscores, datainputs, tick = npredict.feed_trace_unfold(deepcopy(eng), data, pticks, reset_potentials,
-                          propagation_count=20, refractoryperiod=2, divergence=3)
+                                                               propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
         print("Params")
         pp.pprint(eng.network.params)
 
+        print("\nPScores")
+        pp.pprint(pscores)
+
         print("\nInputs")
         pp.pprint(priories)
 
-        print("\nPScores")
-        pp.pprint(pscores)
+        print("\nPredictions")
+        pp.pprint(datainputs)
 
         save = input("\nsave results in filename (nosave, leave empty): ")
 
         if save != "":
             jsondump("feedtraces2", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "datainputs": datainputs, "pscores_prod": pscores})
+                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": datainputs, "pscores_prod": pscores})
 
-
-    if command[0] == "sinferm":
-        print("sinfer2m")
+    if command[0] == "trace":
+        print("tracing")
 
         for i in range(int(command[4]), int(command[5])):
 

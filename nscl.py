@@ -582,9 +582,18 @@ class NSCL:
             # self.network.synapses = content["synapses"]
             # self.network.params = content["params"]
 
-            self.network.params = load_state["params"]
 
-            self.network
+            defparams = open(f"defparams.json", "r")
+            # print(dir())
+            cont = defparams.read()
+            cont = cont.replace("\t", "")
+            cont = cont.replace("\n", "")
+            # input(cont)
+            defparams = json.loads(cont)
+            # self.params = {**defparams, **params}
+            self.network.params = {**defparams, **load_state["params"]}
+
+            # self.network.params = load_state["params"]
 
             self.tick = load_state["tick"]
             self.traces = load_traces["traces"]

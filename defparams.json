@@ -19,5 +19,8 @@
     "DefaultEncoderFloor": 0,
     "DefaultEncoderResolution": 10,
 
-    "TraceLength": 60
+    "TraceLength": 60,
+    "InferDivergence": 3,
+    "InferRefractory": 2,
+    "InferLength": 20
 }

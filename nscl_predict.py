@@ -83,10 +83,10 @@ class NSCLPredict:
             times.sort()
             templist = []
 
-            print('##############################')
-            print('\npscores before')
-            pp.pprint(pscores)
-            print('datainput before', datainputs, '\n')
+            # print('##############################')
+            # print('\npscores before')
+            # pp.pprint(pscores)
+            # print('datainput before', datainputs, '\n')
             # print(templist)
 
             if len(datainputs[tick-1]) == 0:
@@ -145,9 +145,9 @@ class NSCLPredict:
                     for i in datainputs[rw]:
                         exclusioninputs.append(i)
 
-            print('\nexclusions', exclusioninputs)
-            print('\npscores after')
-            pp.pprint(pscores)
+            # print('\nexclusions', exclusioninputs)
+            # print('\npscores after')
+            # pp.pprint(pscores)
 
             for t in ptimes:
                 # pscorewindow[t] = []
@@ -157,16 +157,16 @@ class NSCLPredict:
                         pscorewindowunfied.append((s, pscores[t][s]))
 
             pscorewindowunfied.sort(key=lambda x: x[1], reverse=True)
-            print('divergence', divergence)
-            input()
+            # print('divergence', divergence)
+            # input()
             pscorewindowunfied = pscorewindowunfied[:divergence]
             # print('pscorewindow', pscorewindow)
-            print('pscoreunified', pscorewindowunfied)
+            # print('pscoreunified', pscorewindowunfied)
             # print('ptimes', ptimes)
             datainputs[max(ptimes)] = [x[0] for x in pscorewindowunfied]
 
-            print('datainput times after', datainputs)
-            input()
+            # print('datainput times after', datainputs)
+            # input()
 
             tick += 1
 
