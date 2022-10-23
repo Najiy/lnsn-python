@@ -7,6 +7,7 @@
         "BindingThreshold": 0.5,
         "DownPotentialFactor": 0.2,
         "CompNameSortByPotential": true,
+        "CompNameSortByCompositeFirst": true,
         "FiringThreshold": 0.25,
         "ZeroingThreshold": 0.05,
         "DecayFactor": 0.6,

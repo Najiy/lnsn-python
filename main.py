@@ -956,20 +956,39 @@ while True:
             "reset potentials (y/n): ") == 'y' else False
         first = int(input("first row in file (stream from): "))
         last = int(input("last row in file (stream to): "))
-        pticks = inputDef("infer length after stream (def 20): ", eng.network.params['InferLength'], int)
-        refract = inputDef("infer-refractory period (def 2): ", eng.network.params['InferRefractory'], int)
-        divergence = inputDef("divergence count (def 3): ", eng.network.params['InferDivergence'], int)
+        pticks = inputDef("infer length after stream (def 20): ",
+                          eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 2): ",
+                           eng.network.params['InferRefractoryWindow'], int)
+        divergence = inputDef("divergence count (def 3): ",
+                              eng.network.params['InferDivergence'], int)
 
         data = {}
+        dataCompare = {}
 
         for t in range(first, last):
             data[t] = deepcopy(alldata[t])
 
+        for t in range(first, last+pticks):
+            dataCompare[t] = deepcopy(alldata[t])
+
         del alldata
 
         priories = deepcopy(data)
-        pscores, datainputs, tick = npredict.feed_trace_unfold(deepcopy(eng), data, pticks, reset_potentials,
-                                                               propagation_count=20, refractoryperiod=refract, divergence=divergence)
+        pscores, datainputs, tick, predictions = npredict.feed_forward_unfold(deepcopy(eng), data, pticks, reset_potentials,
+                                                                              propagation_count=20, refractoryperiod=refract, divergence=divergence)
+
+        for t in range(last, last+pticks-2):
+            try:
+                sc = [p[1] for d in dataCompare[t]
+                      for p in predictions[t] if p[0] == d]
+                # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
+                print(t, dataCompare[t], sc, predictions[t])
+            except:
+                print('error (context lost), no t-entry at', t)
+
+        print("Accuracy")
+        # print("Accuracy")
 
         print("Params")
         pp.pprint(eng.network.params)
@@ -980,14 +999,183 @@ while True:
         print("\nInputs")
         pp.pprint(priories)
 
-        print("\nPredictions")
+        print("\nAccInputs")
         pp.pprint(datainputs)
+
+        print("\nPredictions")
+        pp.pprint(predictions)
 
         save = input("\nsave results in filename (nosave, leave empty): ")
 
         if save != "":
             jsondump("feedtraces2", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": datainputs, "pscores_prod": pscores})
+                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+
+    if command[0] == "sinferacc":
+        def inputDef(prompt, defval, casting):
+            x = input(prompt)
+            try:
+                return casting(x)
+            except:
+                return defval
+
+        print("sinfer")
+
+        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
+        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
+
+        alldata = load_data(file_data, file_meta)
+
+        reset_potentials = True if input(
+            "reset potentials (y/n): ") == 'y' else False
+        first = int(input("first row in file (stream from): "))
+        last = int(input("last row in file (stream to): "))
+        pticks = inputDef("infer length after stream (def 20): ",
+                          eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 2): ",
+                           eng.network.params['InferRefractoryWindow'], int)
+        divergence = inputDef("divergence count (def 3): ",
+                              eng.network.params['InferDivergence'], int)
+
+        data = {}
+        dataCompare = {}
+
+        for t in range(first, last):
+            data[t] = deepcopy(alldata[t])
+
+        for t in range(first, last+pticks):
+            dataCompare[t] = deepcopy(alldata[t])
+
+        del alldata
+
+        accres = []
+        for div in range(1, divergence+1):
+            for ref in range(1, refract+1):
+
+                # pscores={}
+                # datainputs={}
+                # tick = 0
+
+                # priories = deepcopy(data)
+
+                pscores, datainputs, tick, predictions = npredict.feed_forward_unfold(deepcopy(eng), deepcopy(data), deepcopy(pticks), reset_potentials,
+                                                                                      propagation_count=20, refractoryperiod=ref, divergence=div)
+
+                # print(f"D: {div} R: {ref}")
+                # pp.pprint(predictions)
+                # input()
+
+                potacc = 0.0
+                ctxloss = 0
+                ctxcount = 0
+                ctxcorr = 0
+                ctxpotacc = -1
+                for t in range(last, last+pticks-2):
+                    ctxcount += 1
+                    try:
+                        # check if items in datacompare are also in predictions list
+                        sc = [p[1] for d in dataCompare[t]
+                              for p in predictions[t] if p[0] == d][0]
+                        # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
+                        potacc += sc
+                        # print(t, dataCompare[t], sc, predictions[t])
+
+                        dcomp = dataCompare[t]
+                        pcomp = [p[0] for p in predictions[t]][:len(dataCompare[t])]
+
+                        ctxcorr += len(list(set(dcomp) & set(pcomp)))
+                        # if ctxcorr > 0:
+                        #     print("correct context", t, ctxcorr, dcomp, pcomp)
+                        #     input()
+
+                    except:
+                        ctxloss += 1
+                        # print('error (context lost), no t-entry at', t)
+
+                del pscores
+                del datainputs
+                del tick
+                del predictions
+
+                try:
+                    ctxpotacc = potacc * (1 - ctxloss/ctxcount)
+                except:
+                    pass
+
+                print(f"Diverg: {div} Refrac: {ref} PotTtl: {potacc:0.2f} CtxLoss: {ctxloss/ctxcount:0.2f} CtxAcc: {ctxcorr} CtxPotDist: {ctxpotacc:0.2f}")
+                accres.append((div, ref, potacc, ctxloss / ctxcount,
+                              ctxcorr, ctxpotacc))
+
+        accres.sort(key=lambda x: x[2], reverse=True)
+        accres.sort(key=lambda x: x[4], reverse=True)
+        pp.pprint(accres[:5])
+        tops = deepcopy(accres[:5])
+
+        accres.sort(key=lambda x: x[4], reverse=True)
+        accres.sort(key=lambda x: x[2], reverse=True)
+        pp.pprint(accres[:5])
+        tops.extend(deepcopy(accres[:5]))
+
+        tag = input("Save results to ctxacc.csv with tag: (leave empty, no save)? ")
+
+        if tag != "":
+            composeorder = ""
+            if eng.network.params['ComposeByCompositeFirst']:
+                composeorder += "C"
+            else:
+                composeorder += "P"
+            if eng.network.params['ComposeByPotentialFirst']:
+                composeorder += "P"
+            else:
+                composeorder += "A"
+            tag = f"B{eng.network.params['BindingCount']}L{eng.network.params['PropagationLevels']}_{composeorder}_{tag}"
+
+
+            try:
+                fs = open("./states/ctxacc.csv", "r")
+                fs.close()
+            except:
+                fs = open("./states/ctxacc.csv", "w+")
+                fs.write("Datetime,NetworkHashID,PredictionTag,PtRange,Binding,Levels,ComposeByPotentialsFirst,ComposeByCompositionFirst,Divergence,Refractory,PotTtl,CtxLoss,CtxAcc,CtxPotDist,\n")
+                fs.close()
+
+            ctxaccfile = open("./states/ctxacc.csv", "a")
+
+            for entry in tops:
+                pfile = f"{command[1]}_{command[2]}.csv"
+                ctxaccfile.write(
+                    f"{datetime.now()},{eng.network.hash_id},{tag},{first}->{last}+{pticks},{eng.network.params['BindingCount']},{eng.network.params['PropagationLevels']},{eng.network.params['ComposeByPotentialFirst']},{eng.network.params['ComposeByCompositeFirst']},{entry[0]},{entry[1]},{round(entry[2],4)},{round(entry[3],4)},{round(entry[4],4)},{round(entry[5],4)},\n")
+
+            ctxaccfile.close()
+            print(" [ ctxacc.csv appended ] ")
+
+        # input(**ctxaccfile.head())
+        # cols = [x for x in  ctxaccfile.head()]
+        # test = pd.concat([pd.DataFrame([i,1,2,3], columns=cols) for i in range(5)], ignore_index=True)
+        # print(test)
+
+        # print("Accuracy")
+
+        # print("Params")
+        # pp.pprint(eng.network.params)
+
+        # print("\nPScores")
+        # pp.pprint(pscores)
+
+        # print("\nInputs")
+        # pp.pprint(priories)
+
+        # print("\nAccInputs")
+        # pp.pprint(datainputs)
+
+        # print("\nPredictions")
+        # pp.pprint(predictions)
+
+        # save = input("\nsave results in filename (nosave, leave empty): ")
+
+        # if save != "":
+        #     jsondump("feedtraces2", f"{save}.json", {
+        #              "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
 
     if command[0] == "trace":
         print("tracing")
@@ -1072,7 +1260,16 @@ while True:
         print(f" Savestate({command[1]})")
         eng.save_state(command[1])
         # else:
-        #     eng.save_state(eng.network.)
+        # composeorder = ""
+        # if eng.network.params['ComposeByCompositeFirst']:
+        #     composeorder += "C"
+        # else:
+        #     composeorder += "P"
+        # if eng.network.params['ComposeByPotentialFirst']:
+        #     composeorder += "P"
+        # else:
+        #     composeorder += "A"
+        # eng.save_state(f"B{eng.network.params['BindingCount']}L{eng.network.params['PropagationLevels']}_{composeorder}_{command[1]}")
 
     if command[0] == "load":
         print(f" Loadstate({command[1]})")

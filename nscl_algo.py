@@ -1,6 +1,7 @@
 from audioop import reverse
 from decimal import DivisionByZero
 from http import server
+from re import T
 from matplotlib import scale
 from numpy import string_
 import nscl
@@ -163,7 +164,7 @@ class NSCLAlgo:
             and neurones[n].level < eng.network.params["PropagationLevels"]
         ]
 
-        nses.sort(key=lambda n: neurones[n].level, reverse=False)
+        nses.sort(key=lambda n: neurones[n].level, reverse=eng.network.params["ComposeByCompositeFirst"])
 
         active = NSCLAlgo.chunks(
             nses,
@@ -177,7 +178,7 @@ class NSCLAlgo:
         neurones_down_potentials = []
 
         def sortbypotentials(nset):
-            if eng.network.params["CompNameSortByPotential"]:
+            if eng.network.params["ComposeByPotentialFirst"]:
                 nset.sort(key=lambda n: neurones[n].potential, reverse = True)
             return nset
 

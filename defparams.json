@@ -5,7 +5,8 @@
     "PruningThreshold": 0.2,
     "BindingThreshold": 0.5,
     "DownPotentialFactor": 0.2,
-    "CompNameSortByPotential": true,
+    "ComposeByPotentialFirst": true,
+    "ComposeByCompositeFirst": false,
 
     "FiringThreshold": 0.25,
     "ZeroingThreshold": 0.05,
@@ -20,7 +21,9 @@
     "DefaultEncoderResolution": 10,
 
     "TraceLength": 60,
-    "InferDivergence": 3,
-    "InferRefractory": 2,
-    "InferLength": 20
+    "InferDivergence": 4,
+    "InferRefractoryWindow": 4,
+    "InferLength": 20,
+    "InferRefractoryCoefficient": 0,
+    "InferRefractoryInputThreshold":0 
 }

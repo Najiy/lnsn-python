@@ -14,8 +14,7 @@ f_tagname= "S10F10"
 total_streams = int_streams + float_streams
 
 
-
-xs = [int((math.sin(x/19*2) + 1) * total_streams/2) for x in range(interval)]
+xs = [[int((math.sin(x/19*2) + 1) * total_streams/2)] for x in range(interval)]
 
 for i in xs:
     print(i)
@@ -38,10 +37,11 @@ lines.append("unix_time,"+",".join(headers) + ",\n")
 for i,v in enumerate(xs):
     line = ["" for x in range(total_streams)]
     line.insert(0, f"{i}")
-    if v > len(int_array):
-        line[v+1] = f"{float_masks[v]}"
-    else:
-        line[v+1] = "1"
+    for vi in v:
+        if vi > len(int_array):
+            line[vi+1] = f"{float_masks[vi]}"
+        else:
+            line[vi+1] = "1"
     lines.append(",".join(line)+",\n")
 
 f = open(f"./dataset/dataset_sin_{f_tagname}.csv", "w")

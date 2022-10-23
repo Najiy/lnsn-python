@@ -5,17 +5,15 @@ import numpy as np
 import os
 
 
-
 interval = 600
 int_streams = 5
 float_streams = 5
-f_tagname= "S5F5"
+f_tagname = "S5F5"
 
 total_streams = int_streams + float_streams
 
 
-
-xs = [int(x%(int_streams+float_streams)) for x in range(interval)]
+xs = [[int(x % (int_streams+float_streams))] for x in range(interval)]
 
 for i in xs:
     print(i)
@@ -23,11 +21,11 @@ for i in xs:
 input()
 
 
-
 # choices = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 int_array = [f"S{x}" for x in range(int_streams)]
 float_array = [f"F{x}" for x in range(float_streams)]
-float_masks = [int(random.uniform(float_streams+int_streams, 256)) for x in range(total_streams)]
+float_masks = [int(random.uniform(float_streams+int_streams, 256))
+               for x in range(total_streams)]
 
 
 headers = int_array + float_array
@@ -35,13 +33,14 @@ headers = int_array + float_array
 lines = []
 lines.append("unix_time,"+",".join(headers) + ",\n")
 
-for i,v in enumerate(xs):
+for i, v in enumerate(xs):
     line = ["" for x in range(total_streams)]
     line.insert(0, f"{i}")
-    if v > len(int_array):
-        line[v+1] = f"{float_masks[v]}"
-    else:
-        line[v+1] = "1"
+    for vi in v:
+        if vi > len(int_array):
+            line[vi+1] = f"{float_masks[vi]}"
+        else:
+            line[vi+1] = "1"
     lines.append(",".join(line)+",\n")
 
 f = open(f"./dataset/dataset_saw_{f_tagname}.csv", "w")
@@ -59,12 +58,14 @@ meta_content = [meta_headers]
 for h in headers:
     if "F" in h:
         meta_content.append(
-            meta_line.replace("name", h).replace("min", "0").replace("max", "1024")
+            meta_line.replace("name", h).replace(
+                "min", "0").replace("max", "1024")
             + "\n"
         )
     elif "S" in h:
         meta_content.append(
-            meta_line.replace("name", h).replace("min", "0").replace("max", "1") + "\n"
+            meta_line.replace("name", h).replace(
+                "min", "0").replace("max", "1") + "\n"
         )
 
 print(meta_content)
