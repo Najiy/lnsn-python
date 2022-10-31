@@ -1,11 +1,11 @@
 {
     "BindingCount": 2,
-    "PropagationLevels": 3,
+    "PropagationLevels": 4,
     "PruneInterval": 600,
     "PruningThreshold": 0.2,
     "BindingThreshold": 0.5,
     "DownPotentialFactor": 0.2,
-    "ComposeByPotentialFirst": true,
+    "ComposeByPotentialFirst": false,
     "ComposeByCompositeFirst": false,
 
     "FiringThreshold": 0.25,
@@ -21,7 +21,7 @@
     "DefaultEncoderResolution": 10,
 
     "TraceLength": 60,
-    "InferDivergence": 4,
+    "InferDivergence": 8,
     "InferRefractoryWindow": 4,
     "InferLength": 20,
     "InferRefractoryCoefficient": 0,

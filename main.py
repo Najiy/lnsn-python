@@ -937,7 +937,7 @@ while True:
         print("composite", neurone)
         pp.pprint(npredict.back_trace(propslvl, neurone))
 
-    if command[0] == "sinfer":
+    if command[0] == "infunfold":
         def inputDef(prompt, defval, casting):
             x = input(prompt)
             try:
@@ -945,7 +945,7 @@ while True:
             except:
                 return defval
 
-        print("sinfer")
+        print("infer unfold")
 
         file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
         file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
@@ -1011,7 +1011,7 @@ while True:
             jsondump("feedtraces2", f"{save}.json", {
                      "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
 
-    if command[0] == "sinferacc":
+    if command[0] == "infunfoldacc":
         def inputDef(prompt, defval, casting):
             x = input(prompt)
             try:
@@ -1019,7 +1019,7 @@ while True:
             except:
                 return defval
 
-        print("sinfer")
+        print("infer unfold")
 
         file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
         file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
@@ -1032,9 +1032,9 @@ while True:
         last = int(input("last row in file (stream to): "))
         pticks = inputDef("infer length after stream (def 20): ",
                           eng.network.params['InferLength'], int)
-        refract = inputDef("infer-refractory period (def 2): ",
+        refract = inputDef("infer-refractory period (def 4): ",
                            eng.network.params['InferRefractoryWindow'], int)
-        divergence = inputDef("divergence count (def 3): ",
+        divergence = inputDef("divergence count (def 8): ",
                               eng.network.params['InferDivergence'], int)
 
         data = {}
@@ -1106,15 +1106,15 @@ while True:
                 accres.append((div, ref, potacc, ctxloss / ctxcount,
                               ctxcorr, ctxpotacc))
 
-        accres.sort(key=lambda x: x[2], reverse=True)
+        accres.sort(key=lambda x: x[3], reverse=True)
         accres.sort(key=lambda x: x[4], reverse=True)
-        pp.pprint(accres[:5])
-        tops = deepcopy(accres[:5])
+        pp.pprint(accres[:10])
+        tops = deepcopy(accres[:10])
 
         accres.sort(key=lambda x: x[4], reverse=True)
-        accres.sort(key=lambda x: x[2], reverse=True)
-        pp.pprint(accres[:5])
-        tops.extend(deepcopy(accres[:5]))
+        accres.sort(key=lambda x: x[3], reverse=True)
+        pp.pprint(accres[:10])
+        tops.extend(deepcopy(accres[:10]))
 
         tag = input("Save results to ctxacc.csv with tag: (leave empty, no save)? ")
 
@@ -1149,33 +1149,125 @@ while True:
             ctxaccfile.close()
             print(" [ ctxacc.csv appended ] ")
 
-        # input(**ctxaccfile.head())
-        # cols = [x for x in  ctxaccfile.head()]
-        # test = pd.concat([pd.DataFrame([i,1,2,3], columns=cols) for i in range(5)], ignore_index=True)
-        # print(test)
+    if command[0] == "infprogr":
+        def inputDef(prompt, defval, casting):
+            x = input(prompt)
+            try:
+                return casting(x)
+            except:
+                return defval
 
-        # print("Accuracy")
+        print("infer progressive")
 
-        # print("Params")
-        # pp.pprint(eng.network.params)
+        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
+        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
 
-        # print("\nPScores")
-        # pp.pprint(pscores)
+        alldata = load_data(file_data, file_meta)
 
-        # print("\nInputs")
-        # pp.pprint(priories)
+        reset_potentials = True if input(
+            "reset potentials (y/n): ") == 'y' else False
+        first = int(input("first row in file (stream from): "))
+        last = int(input("last row in file (stream to): "))
+        # pticks = inputDef("infer length after stream (def 20): ",
+        #                   eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 4): ",
+                           eng.network.params['InferRefractoryWindow'], int)
+        divergence = inputDef("divergence count (def 8): ",
+                              eng.network.params['InferDivergence'], int)
 
-        # print("\nAccInputs")
-        # pp.pprint(datainputs)
+        data = {}
+        dataCompare = {}
 
-        # print("\nPredictions")
-        # pp.pprint(predictions)
+        for t in range(first, last):
+            data[t] = deepcopy(alldata[t])
 
-        # save = input("\nsave results in filename (nosave, leave empty): ")
+        for t in range(first, last+pticks):
+            dataCompare[t] = deepcopy(alldata[t])
 
-        # if save != "":
-        #     jsondump("feedtraces2", f"{save}.json", {
-        #              "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+        del alldata
+
+        accres = []
+        for div in range(1, divergence+1):
+            for ref in range(1, refract+1):
+                pscores, datainputs, tick, predictions = npredict.feed_forward_progressive(deepcopy(eng), deepcopy(data), reset_potentials,
+                                                                                      propagation_count=20, refractoryperiod=ref, divergence=div)
+
+                potacc = 0.0
+                ctxloss = 0
+                ctxcount = 0
+                ctxcorr = 0
+                ctxpotacc = -1
+
+                for t in range(last, last+pticks-2):
+                    ctxcount += 1
+                    try:
+                        # check if items in datacompare are also in predictions list
+                        sc = [p[1] for d in dataCompare[t]
+                              for p in predictions[t] if p[0] == d][0]
+
+                        potacc += sc
+                        dcomp = dataCompare[t]
+                        pcomp = [p[0] for p in predictions[t]][:len(dataCompare[t])]
+
+                        ctxcorr += len(list(set(dcomp) & set(pcomp)))
+                    except:
+                        ctxloss += 1
+
+                del pscores
+                del datainputs
+                del tick
+                del predictions
+
+                try:
+                    ctxpotacc = potacc * (1 - ctxloss/ctxcount)
+                except:
+                    pass
+
+                print(f"Diverg: {div} Refrac: {ref} PotTtl: {potacc:0.2f} CtxLoss: {ctxloss/ctxcount:0.2f} CtxAcc: {ctxcorr} CtxPotDist: {ctxpotacc:0.2f}")
+                accres.append((div, ref, potacc, ctxloss / ctxcount,
+                              ctxcorr, ctxpotacc))
+
+        accres.sort(key=lambda x: x[3], reverse=True)
+        accres.sort(key=lambda x: x[4], reverse=True)
+        pp.pprint(accres[:10])
+        tops = deepcopy(accres[:10])
+
+        accres.sort(key=lambda x: x[4], reverse=True)
+        accres.sort(key=lambda x: x[3], reverse=True)
+        pp.pprint(accres[:10])
+        tops.extend(deepcopy(accres[:10]))
+
+        tag = input("Save results to ctxacc.csv with tag: (leave empty, no save)? ")
+
+        if tag != "":
+            composeorder = ""
+            if eng.network.params['ComposeByCompositeFirst']:
+                composeorder += "C"
+            else:
+                composeorder += "P"
+            if eng.network.params['ComposeByPotentialFirst']:
+                composeorder += "P"
+            else:
+                composeorder += "A"
+            tag = f"B{eng.network.params['BindingCount']}L{eng.network.params['PropagationLevels']}_{composeorder}_{tag}"
+
+            try:
+                fs = open("./states/ctxacc.csv", "r")
+                fs.close()
+            except:
+                fs = open("./states/ctxacc.csv", "w+")
+                fs.write("Datetime,NetworkHashID,PredictionTag,PtRange,Binding,Levels,ComposeByPotentialsFirst,ComposeByCompositionFirst,Divergence,Refractory,PotTtl,CtxLoss,CtxAcc,CtxPotDist,\n")
+                fs.close()
+
+            ctxaccfile = open("./states/ctxacc.csv", "a")
+
+            for entry in tops:
+                pfile = f"{command[1]}_{command[2]}.csv"
+                ctxaccfile.write(
+                    f"{datetime.now()},{eng.network.hash_id},{tag},{first}->{last}+{pticks},{eng.network.params['BindingCount']},{eng.network.params['PropagationLevels']},{eng.network.params['ComposeByPotentialFirst']},{eng.network.params['ComposeByCompositeFirst']},{entry[0]},{entry[1]},{round(entry[2],4)},{round(entry[3],4)},{round(entry[4],4)},{round(entry[5],4)},\n")
+
+            ctxaccfile.close()
+            print(" [ ctxacc.csv appended ] ")
 
     if command[0] == "trace":
         print("tracing")

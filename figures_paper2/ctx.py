@@ -1,3 +1,4 @@
+from array import array
 import ctypes
 from unittest import result
 import pandas as pd
@@ -9,8 +10,9 @@ ctxdata = pd.read_csv('../states/ctxacc.csv', usecols=['PredictionTag', 'Compose
                       'ComposeByPotentialsFirst', 'Divergence', 'Refractory', 'CtxLoss', 'CtxAcc', 'CtxPotDist'])
 
 ctxdata = ctxdata[ctxdata['CtxAcc'] >= 0.75]
-ctxdata = ctxdata[ctxdata['CtxPotDist'] >= 0.75]
-ctxdata = ctxdata[ctxdata['CtxLoss'] <= 0.2]
+ctxdata = ctxdata[ctxdata['Refractory'] <4]
+# ctxdata = ctxdata[ctxdata['CtxPotDist'] >= 0.75]
+# ctxdata = ctxdata[ctxdata['CtxLoss'] <= 0.2]
 # ctxdata = ctxdata[lambda x: ctxdata['PredictionTag']]
 # ctxdata.loc[lambda x: "MV" in x['PredictionTag']]
 mv3 = deepcopy(ctxdata[ctxdata.apply(
@@ -34,24 +36,31 @@ def printresults(tag, results):
     # print(f'\n[{tag} CtxPotDist]\n', results[:8])
 
 
-def generatetableforoverleaf():
-    def entry(conf):
-        print(r"\textit{"+ conf+r"} & \scriptsize $S0\ [0,1]\ \ (1.0)$ \\\n\textbf{ } & \scriptsize $S1\ [0,1]\ \ (1.0)$ \\\n\hline")
-    print("\n\n")
-    print(r"\begin{table*}[htbp]")
-    print(r"\caption{stuff to say}")
-    print(r"\vspace*{4mm}")
-    print(r"\begin{tabular*}{\hsize}{c|ccccccc}")
-    print("\hline")
-    print(r"\textbf{$Configurations$} && $PotFirst$ && $CompFirst$ && $Divergence$ && $RefracPeriod$ && $CtxLoss$ && $CtxAcc$ && $CtxPotDist$")
-    entry("B2L3sdfsfdsfdfd")
-    print("\end{tabular*}\n\label{context_data}\n\end{table*}")
+def generatetableforoverleaf(data):
+    for idx, rows in data.iterrows():
+        tag = rows['PredictionTag'][:-1]
+        tag = "\_".join(tag.split("_")[2:])
+        line = r"\textit{\scriptsize $" + tag + f"$}} & \scriptsize ${not rows['ComposeByCompositionFirst'] }$ & \scriptsize ${rows['ComposeByPotentialsFirst']}$ & \scriptsize ${rows['Divergence']}$ & \scriptsize ${rows['Refractory']}$ & \scriptsize ${rows['CtxLoss']}$ & \scriptsize ${round(rows['CtxAcc']/20, 4)}$ \\\\ \n\hline"
+        print(line)
 
+    # def entry(conf):
+    #     print(r"\textit{"+ conf+r"} & \scriptsize $S0\ [0,1]\ \ (1.0)$ \\\n\textbf{ } & \scriptsize $S1\ [0,1]\ \ (1.0)$ \\\n\hline")
+    # print("\n\n")
+    # print(r"\begin{table*}[htbp]")
+    # print(r"\caption{stuff to say}")
+    # print(r"\vspace*{4mm}")
+    # print(r"\begin{tabular*}{\hsize}{c|ccccccc}")
+    # print("\hline")
+    # print(r"\textbf{$Configurations$} && $PotFirst$ && $CompFirst$ && $Divergence$ && $RefracPeriod$ && $CtxLoss$ && $CtxAcc$ && $CtxPotDist$")
+    # entry("B2L3sdfsfdsfdfd")
+    # print("\end{tabular*}\n\label{context_data}\n\end{table*}")
 
 
 printresults('sin3', sin3)
 printresults('saw3', saw3)
 printresults('mv3', mv3)
 
-generatetableforoverleaf()
-
+print("sin3")
+generatetableforoverleaf(sin3[:10])
+print("saw3")
+generatetableforoverleaf(saw3[:10])
