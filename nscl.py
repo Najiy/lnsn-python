@@ -27,7 +27,6 @@ elif os.name == "nt":
     pathdiv = "\\"
 
 
-
 class NSCL:
     class Test:
         class CompName:
@@ -35,16 +34,13 @@ class NSCL:
                 self.name = 'CMP(CMP(S0~10-11,S6~10-11),S0~0-1)'
                 # self.name = "CMP(CMP(CMP(F8~0-1,F9~0-1),CMP(S1~10-11,S6~10-11)),S0~0-1)"
                 self.potential = 1.0
-                
+
                 print(f'\ngenerated name {self.name}')
 
                 # a = {'Malaysia': [1]}
                 # b = {'Malaysia': [2,2]}
                 # c = mergeDictionary(a,b)
                 # print(c)
-            
-            
-
 
         # def childProductWeights(name, eng, cweight= 1, primes={}):
         #     neurones = eng.network.neurones
@@ -57,14 +53,13 @@ class NSCL:
 
         #     for rsyn in neurones[name].rsynapses:
 
-                
         #         mapping = f'{rsyn}->{name}'
         #         wgt = eng.network.synapses[mapping].wgt
 
         #         if 'CMP' not in rsyn:
         #             if rsyn not in primes:
         #                 primes[rsyn] = [rsyn,wgt]
-                
+
         #         ps = NSCL.Test.childProductWeights(rsyn, eng, cweight * wgt, primes)
 
         #         for p in ps:
@@ -72,10 +67,9 @@ class NSCL:
 
         #         print('rsyn is ', rsyn, mapping, wgt, 'pass')
         #         # newAcc[mapping] = wgt
-                
+
         #     # return dict(Counter(acc) + Counter(newAcc))
         #     return primes
-
 
     class NSymbol:
         def __neuroneLvl(self, name):
@@ -116,7 +110,7 @@ class NSCL:
             return maxlvl, heirarcs
 
         def __init__(
-            self, name, occurs=1, potential=0, refractory=0, lastspike="", probationary= -1
+            self, name, occurs=1, potential=0, refractory=0, lastspike="", probationary=-1
         ) -> None:
             self.name = name
             self.meta = {}
@@ -137,13 +131,13 @@ class NSCL:
         def __init__(
             self, r_neurone, f_neurone, wgt=0.01, occurs=1, lastspike=""
         ) -> None:
-            
+
             self.fref = f_neurone
             self.rref = r_neurone
             self.wgt = wgt
             self.occurs = occurs
             self.lastspike = lastspike
-            
+
             # self.f1 = 0
             # self.f2 = 0
             # self.aug = 0
@@ -190,7 +184,7 @@ class NSCL:
         def __repr__(self) -> str:
             return str(self.net_struct())
 
-        def check_params(self, prompt_fix=  True) -> str:
+        def check_params(self, prompt_fix=True) -> str:
             firing_threshold = self.params["FiringThreshold"]
             zeroing_threshold = self.params["ZeroingThreshold"]
             binding_threshold = self.params["BindingThreshold"]
@@ -233,7 +227,7 @@ class NSCL:
             self.network = NSCL.Network() if network == None else network
             self.npruned = {}
             self.spruned = {}
-            self._algo = algorithm if algorithm else NSCLAlgo.algo1
+            self._algo = algorithm if algorithm else NSCLAlgo.algo2
             self.traces = []
             self.ntime = []
             self.ncounts = []
@@ -270,40 +264,9 @@ class NSCL:
         #         ):
         #             self.remove_neurone(n)
 
-        def algo(self, inputs, meta={}) -> tuple:
-            r,errors,activated = self._algo(self, inputs, meta)
+        def algo(self, inputs, previnputs, meta={}) -> tuple:
+            r, errors, activated = self._algo(self, inputs, previnputs, meta)
             it = self.tick
-
-            # if self.trace:
-            #     self.traces.append(r["trace1"])
-            #     self.ntime.append(it)
-            #     self.ncounts.append(len(r["trace1"]))
-            #     self.nmask.append("reinforced")
-
-            #     self.ntime.append(it)
-            #     self.ncounts.append(len(self.ineurones()))
-            #     self.nmask.append("input")
-
-            #     self.ntime.append(it)
-            #     self.ncounts.append(len(self.gneurones()))
-            #     self.nmask.append("composite")
-
-            #     self.ntime.append(it)
-            #     self.ncounts.append(len(self.neurones()))
-            #     self.nmask.append("total")
-
-            #     self.ntime.append(it)
-            #     self.ncounts.append(len(self.synapses()))
-            #     self.nmask.append("synapses")
-
-            #     while len(self.traces) > self.network.params["TraceLength"]:
-            #         self.traces.pop(0)
-            #     while len(self.ntime) * 5 > self.network.params["TraceLength"] * 5:
-            #         self.ntime.pop(0)
-            #     while len(self.ncounts) * 5 > self.network.params["TraceLength"] * 5:
-            #         self.ncounts.pop(0)
-            #     while len(self.nmask) * 5 > self.network.params["TraceLength"] * 5:
-            #         self.nmask.pop(0)
 
             self.tick += 1
             return r, errors, activated
@@ -351,7 +314,7 @@ class NSCL:
             self.npruned[name] = delneurone
             del self.network.neurones[name]
             return delneurone
-            
+
         def reset_potentials(self):
             for n in self.network.neurones:
                 self.network.neurones[n].potential = 0
@@ -582,7 +545,6 @@ class NSCL:
             # self.network.synapses = content["synapses"]
             # self.network.params = content["params"]
 
-
             defparams = open(f"defparams.json", "r")
             # print(dir())
             cont = defparams.read()
@@ -688,9 +650,10 @@ class NSCL:
                     f"  {s.name():^20}   wgt: {s.wgt}"
                 )
 
-        def get_actives(self, threshold = -1):
+        def get_actives(self, threshold=-1):
             if threshold == -1:
                 threshold = self.params()["BindingThreshold"]
-            rperiod  = self.params()["RefractoryPeriod"]
-            neurones = [(x.name, x.potential) for x in self.network.neurones.values() if x.potential >= threshold and x.refractory == rperiod]
+            rperiod = self.params()["RefractoryPeriod"]
+            neurones = [(x.name, x.potential) for x in self.network.neurones.values(
+            ) if x.potential >= threshold and x.refractory == rperiod]
             return neurones

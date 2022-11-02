@@ -937,7 +937,7 @@ while True:
         print("composite", neurone)
         pp.pprint(npredict.back_trace(propslvl, neurone))
 
-    if command[0] == "sinfer":
+    if command[0] == "infunfold":
         def inputDef(prompt, defval, casting):
             x = input(prompt)
             try:
@@ -945,7 +945,7 @@ while True:
             except:
                 return defval
 
-        print("sinfer")
+        print("infer unfold")
 
         file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
         file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
@@ -975,7 +975,7 @@ while True:
         del alldata
 
         priories = deepcopy(data)
-        pscores, datainputs, tick, predictions = npredict.feed_forward_unfold(deepcopy(eng), data, pticks, reset_potentials,
+        pscores, datainputs, tick, rea, predictions = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
                                                                               propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
         for t in range(last, last+pticks-2):
@@ -1011,7 +1011,8 @@ while True:
             jsondump("feedtraces2", f"{save}.json", {
                      "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
 
-    if command[0] == "sinferacc":
+
+    if command[0] == "infprogr":
         def inputDef(prompt, defval, casting):
             x = input(prompt)
             try:
@@ -1019,7 +1020,83 @@ while True:
             except:
                 return defval
 
-        print("sinfer")
+        print("infer progressive")
+
+        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
+        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
+
+        alldata = load_data(file_data, file_meta)
+
+        reset_potentials = True if input(
+            "reset potentials (y/n): ") == 'y' else False
+        first = int(input("first row in file (stream from): "))
+        last = int(input("last row in file (stream to): "))
+        pticks = inputDef("infer length after stream (def 20): ",
+                          eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 2): ",
+                           eng.network.params['InferRefractoryWindow'], int)
+        divergence = inputDef("divergence count (def 3): ",
+                              eng.network.params['InferDivergence'], int)
+
+        data = {}
+        dataCompare = {}
+
+        for t in range(first, last):
+            data[t] = deepcopy(alldata[t])
+
+        for t in range(first, last+pticks):
+            dataCompare[t] = deepcopy(alldata[t])
+
+        del alldata
+
+        priories = deepcopy(data)
+        pscores, datainputs, tick, predictions = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
+                                                                              propagation_count=20, refractoryperiod=refract, divergence=divergence)
+
+        for t in range(last, last+pticks-2):
+            try:
+                sc = [p[1] for d in dataCompare[t]
+                      for p in predictions[t] if p[0] == d]
+                # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
+                print(t, dataCompare[t], sc, predictions[t])
+            except:
+                print('error (context lost), no t-entry at', t)
+
+        print("Accuracy")
+        # print("Accuracy")
+
+        print("Params")
+        pp.pprint(eng.network.params)
+
+        print("\nPScores")
+        pp.pprint(pscores)
+
+        print("\nInputs")
+        pp.pprint(priories)
+
+        print("\nAccInputs")
+        pp.pprint(datainputs)
+
+        print("\nPredictions")
+        pp.pprint(predictions)
+
+        save = input("\nsave results in filename (nosave, leave empty): ")
+
+        if save != "":
+            jsondump("feedtraces2", f"{save}.json", {
+                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+
+
+    if command[0] == "infunfoldacc":
+        def inputDef(prompt, defval, casting):
+            x = input(prompt)
+            try:
+                return casting(x)
+            except:
+                return defval
+
+        print("infer unfold accuracy")
+        input()
 
         file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
         file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
@@ -1058,7 +1135,7 @@ while True:
 
                 # priories = deepcopy(data)
 
-                pscores, datainputs, tick, predictions = npredict.feed_forward_unfold(deepcopy(eng), deepcopy(data), deepcopy(pticks), reset_potentials,
+                pscores, datainputs, tick, predictions = npredict.infer_unfolding(deepcopy(eng), deepcopy(data), deepcopy(pticks), reset_potentials,
                                                                                       propagation_count=20, refractoryperiod=ref, divergence=div)
 
                 # print(f"D: {div} R: {ref}")

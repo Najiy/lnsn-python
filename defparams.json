@@ -25,5 +25,5 @@
     "InferRefractoryWindow": 4,
     "InferLength": 20,
     "InferRefractoryCoefficient": 0,
-    "InferRefractoryInputThreshold":0 
+    "InferRefractoryInputThreshold": 0
 }

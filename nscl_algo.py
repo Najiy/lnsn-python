@@ -1,6 +1,7 @@
 from audioop import reverse
 from decimal import DivisionByZero
 from http import server
+from operator import truediv
 from re import T
 from matplotlib import scale
 from numpy import string_
@@ -10,6 +11,7 @@ import random
 import secrets
 import copy
 from datetime import datetime
+from copy import deepcopy
 
 
 class NSCLAlgo:
@@ -241,10 +243,13 @@ class NSCLAlgo:
         except DivisionByZero:
             return 0
 
-    def algo1(eng, inputs, meta={}) -> tuple:
+
+    def algo1(eng, inputs, previnputs, meta={}) -> tuple:
+        
         # print("Algo {")
         # if now == None:
         #     now = datetime.now().isoformat()
+        
         errors = []
         activated = []
 
@@ -270,6 +275,158 @@ class NSCLAlgo:
                 neurones[i].potential = 1.0
                 neurones[i].occurs += 1
                 neurones[i].lastspike = eng.tick  # now
+
+        # Propagate() - calculates action potentials
+        ns = [n for n in neurones.values()]
+        ns.sort(reverse=True, key=lambda n: n.level)
+        # print(" Propagate()")
+
+        for n in ns:
+            if n.probationary != -1:
+                n.probationary -= 1
+            if n.potential < params["ZeroingThreshold"]:
+                n.potential = 0.0
+                if n.refractory > 0:
+                    n.refractory -= 1
+            elif (
+                n.potential >= params["FiringThreshold"] and n.refractory == 0
+            ):  # and n.potential != 1.0:
+                n.potential = 1.0           # SET ACTIVATED
+                activated.append(n.name)
+                n.refractory = params["RefractoryPeriod"]
+                n.occurs += 1
+                for s in n.fsynapses:
+                    # forwards potentials
+                    try:
+                        neurones[s].potential += (
+                            n.potential
+                            * synapses[NSCLAlgo.sname(n.name, s)].wgt
+                            / params["BindingCount"]
+                        )
+                        n.potential -= (
+                            n.potential
+                            * synapses[NSCLAlgo.sname(n.name, s)].wgt
+                            / params["BindingCount"]
+                        )
+                        neurones[s].potential = min(n.potential, 1.0)
+                        synapses[NSCLAlgo.sname(n.name, s)].occurs += 1
+                        synapses[NSCLAlgo.sname(n.name, s)].lastspike = eng.tick
+                        # ADD TO RE-INFORCE LIST if necessary
+                    
+                    except Exception as e:
+                        errors.append(str(e))
+
+                n.potential *= params["PostSpikeFactor"]
+            else:
+                n.potential *= (  # G1
+                    params["DecayFactor"]
+                    # 0.7
+                    # if len(n.fsynapses) == 0
+                    # else 0.5 + 0.4 / len(n.fsynapses)
+                )
+                if n.refractory > 0:
+                    n.refractory -= 1
+
+        # generate neurones and synapses based on tau (spike-time differences)
+        # GenerateNeurones() & GenerateSynapses()
+        (rsynapse, neurones_down_potentials) = NSCLAlgo.structural_plasticity(
+            eng, time=eng.tick
+        )
+
+        # for d in neurones_down_potentials:
+        #     neurones[d].potential *= params["DownPotentialFactor"]
+
+        # ReinforceSynapses()
+        reinforce_synapse = NSCLAlgo.functional_plasticity(eng, rsynapse, eng.tick)
+        # NSCLAlgo.relevel(eng)
+
+        # print("}")
+
+        # PRUNING
+        # if prune:
+        #     eng.prune_network()
+
+        nlist = [
+            n
+            for n in eng.network.neurones.keys()
+            if (
+                eng.network.neurones[n].occurs == 1
+                and eng.network.neurones[n].probationary == 0
+                and len(eng.network.neurones[n].rsynapses) > 0
+                # and eng.tick - eng.network.neurones[n].lastspike
+                # > eng.network.params["PruneInterval"]
+                and eng.network.avg_wgt_r(n) < eng.network.params["PruningThreshold"]
+            )
+        ]  # useless lol
+
+        for n in nlist:
+            eng.remove_neurone(n)
+
+        return (
+            # "trace1": [neurones[n].potential for n in neurones],
+            reinforce_synapse,
+            errors,
+            activated
+            # "new_nsymbol": ,
+            # "new_syn": ,
+        )
+
+
+    def algo2(eng, inputs, previnputs, meta={}) -> tuple:
+        
+        # print("Algo {")
+        # if now == None:
+        #     now = datetime.now().isoformat()
+        
+        errors = []
+        activated = []
+
+        if meta != {}:
+            for m in meta:
+                eng.meta[m] = meta[m]
+
+        synapses = eng.network.synapses
+        neurones = eng.network.neurones
+        params = eng.network.params
+        inp_neurones = eng.ineurones()
+
+        gen_nsymbol = []
+
+        # input(eng.tick)
+
+        # print("tick", eng.tick)
+        # print("previous inputs", previnputs)
+        print(eng.tick, "current inputs", inputs)
+        input()
+
+        for i in inputs:
+
+            if i in previnputs:
+                input(f"{eng.tick} found duplicate for {i}")
+
+            # prevs = deepcopy(previnputs)
+            # prevs = [x for x in prevs if i in x]
+            # prevs.sort()
+            # print('prev sorted', prevs)
+
+            # if len(prevs) > 0:
+            #     i = str(prevs[-1]) + '*'
+
+            # if len(prevs) > 0:
+            #     print('current prevs', prevs)
+            #     input(i)
+
+            if i not in neurones.keys():
+                n = NSCLAlgo.new_NSymbol(eng, i)
+                n.potential = 1  ## params["InitialPotential"]
+                n.occurs += 1
+                n.lastspike = eng.tick  # now
+                gen_nsymbol.append(gen_nsymbol)
+            elif i in inp_neurones:
+                neurones[i].potential = 1.0
+                neurones[i].occurs += 1
+                neurones[i].lastspike = eng.tick  # now
+            
 
         # Propagate() - calculates action potentials
         ns = [n for n in neurones.values()]

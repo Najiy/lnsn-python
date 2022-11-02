@@ -1,8 +1,3 @@
-def hello():
-    print('hello')
+test = ["ABC*", "ABC**"]
 
-
-x = []
-x.append(hello)
-
-x[0]()
+print("ABC" in [x.replace("*", "") for x in test])
