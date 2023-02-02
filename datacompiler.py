@@ -15,7 +15,7 @@ import pprint
 # print(unixtime)
 
 print(
-    "\n   Data Compiler: Multi-sensor dataset of human activities in a smart home environment. \n     (https://data.mendeley.com/datasets/t9n68ykfk3/1)\n"
+    "\n   Data Compiler: Multi-sensor dataset of human activities in a smart-home environment.   \n     (https://data.mendeley.com/datasets/t9n68ykfk3/1)\n"
 )
 
 pp = pprint.PrettyPrinter(indent=4)

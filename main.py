@@ -17,6 +17,7 @@ from inspect import trace
 from re import search
 import math
 import hashlib
+from sklearn import preprocessing
 
 # from nscl_algo import NSCLAlgo
 # from nscl_algo import NSCLAlgo
@@ -334,6 +335,8 @@ def stream(streamfile, trace=True):
     maxit = min(len(inputs) - 1, interv)
     running = True
 
+    r, e, a, p = ([], [], [], [])
+
     while running and eng.tick <= maxit:
         try:
             clear()
@@ -344,7 +347,7 @@ def stream(streamfile, trace=True):
             print(" ###########################")
             print()
 
-            eng.algo(inputs[eng.tick], meta, trace)
+            r, e, a, p = eng.algo(inputs[eng.tick], p, meta, trace)
 
             if eng.tick == maxit:
                 graphout(eng)
@@ -477,8 +480,9 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
     # netmeta = open(f"{fname}.netmeta", "w+")
 
     starttime = datetime.now().isoformat(timespec="minutes")
-
     next_prompt = True
+
+    r, e, a, p = ([], [], [], [])
 
     while running and eng.tick <= maxit:
 
@@ -521,19 +525,28 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
                 print(" ###########################")
                 print()
 
-            print('\n', eng.tick)
+            # print('\n', eng.tick)
 
             if eng.tick not in data:
-                eng.algo([])
-                print('input', [])
+                # print('Algo2 empty')
+                r, e, a, p = eng.algo([], p)
+                # print('input', [])
             else:
+                # prevs = []
+                # try:
+                #     prevs = data[eng.tick-1]
+                # except:
+                #     pass
+
                 # pp.pprint(data[eng.tick])
                 # input()
                 # input(data[eng.tick])
-                eng.algo(data[eng.tick])
-                print('input', data[eng.tick-1])
 
-            pp.pprint(eng.network.neurones.keys())
+                # print('Algo2 previous')
+                r, e, a, p = eng.algo(data[eng.tick], p)
+                # print('input', data[eng.tick-1])
+
+            # pp.pprint(eng.network.neurones.keys())
 
             if next_prompt and input("[enter] for next step ('r' for no-prompt): ") == 'r':
                 next_prompt = False
@@ -847,6 +860,78 @@ def feed_trace(eng, tfirst, data, ticks=[], p_ticks=0, reset_potentials=True):
     return pscores, datainputs
 
 
+def graph_distinct_predictions(pdistinct):
+
+    input("graph distinct")
+    pp.pprint(pdistinct)
+    input()
+
+    # glue = sns.load_dataset("glue").pivot("Model", "Task", "Score")
+    # print(glue)
+    # print('glue loaded')
+
+    my_colors = [(0.2, 0.3, 0.3), (0.4, 0.5, 0.4),
+                 (0.1, 0.7, 0), (0.1, 0.7, 0)]
+
+    pdistarray = np.zeros((20, len(pdistinct)))
+
+    counter = 0
+    start = min([int(x) for x in pdistinct.keys()])
+    for t in pdistinct:
+        mx = max(pdistinct[t].values())
+        # input(f"{t} {mx}")
+        for s in pdistinct[t]:
+            # input(f"{t} {s} {pdistinct[t][s]}")
+            sidx = int(s.split("~")[0].replace("F", "1").replace("S", "0"))
+            pdistarray[sidx][counter] = pdistinct[t][s] / mx
+        counter += 1
+
+    xdata = [x for x in range(start, start + len(pdistarray[0]))]
+
+    # pdistarray = pdistarray[::-1]
+
+    # pdistinct = [[0.4, 0.3, 0.2, 0.1], [0.1, 0.2, 0.3, 0.4],
+    #              [0.1, 0.2, 0.3, 0.4], [0.1, 0.2, 0.3, 0.4]]
+
+    # tlength = len(pdistarray)
+    arr_t = np.array(pdistarray)
+    # c = sns.color_palette("vlag", as_cmap=True)
+    # c = sns.cubehelix_palette(start=2, rot=0, dark=0, light=.95, reverse=True, as_cmap=YlGnBu)
+
+    sns.heatmap(
+        arr_t,
+        # linewidth= (0.01 if tlength < 100 else 0.0),
+        linewidths=0.01,
+        # cmap="YlGnBu",
+        # cmap=my_colors,
+        vmin=0,
+        vmax=1,
+        # xmin=19,
+        # linewidths=0.01,
+        square=True,
+        linecolor="#222",
+        annot_kws={"fontsize": 11},
+        # linecolor=(0.1,0.2,0.2),
+        xticklabels=xdata,
+        cbar=save,
+    )
+
+    plt.gca().invert_yaxis()
+
+    # colorbar = ax.collections[0].colorbar
+    # M=dt_tweet_cnt.max().max()
+    # colorbar.set_ticks([1/8*M,3/8*M,6/8*M])
+    # colorbar.set_ticklabels(['low','med','high'])
+
+    # if save == True:
+    #     plt.tight_layout()
+    #     plt.savefig(result_path + pathdiv + r"Figure_1.png", dpi=120)
+    #     plt.clf()
+
+    # sns.heatmap(glue)
+    plt.show()
+
+
 ######### main prog starts #########
 args = sys.argv[1:]
 
@@ -975,8 +1060,8 @@ while True:
         del alldata
 
         priories = deepcopy(data)
-        pscores, datainputs, tick, rea, predictions = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
-                                                                              propagation_count=20, refractoryperiod=refract, divergence=divergence)
+        pscores, datainputs, tick, rea, predictions, pdistinct = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
+                                                                                          propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
         for t in range(last, last+pticks-2):
             try:
@@ -1005,12 +1090,16 @@ while True:
         print("\nPredictions")
         pp.pprint(predictions)
 
+        print("\npDistinct")
+        pp.pprint(pdistinct)
+
         save = input("\nsave results in filename (nosave, leave empty): ")
 
         if save != "":
             jsondump("feedtraces2", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pdistinct})
 
+        graph_distinct_predictions(pdistinct)
 
     if command[0] == "infprogr":
         def inputDef(prompt, defval, casting):
@@ -1051,7 +1140,7 @@ while True:
 
         priories = deepcopy(data)
         pscores, datainputs, tick, predictions = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
-                                                                              propagation_count=20, refractoryperiod=refract, divergence=divergence)
+                                                                          propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
         for t in range(last, last+pticks-2):
             try:
@@ -1085,7 +1174,6 @@ while True:
         if save != "":
             jsondump("feedtraces2", f"{save}.json", {
                      "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
-
 
     if command[0] == "infunfoldacc":
         def inputDef(prompt, defval, casting):
@@ -1135,8 +1223,8 @@ while True:
 
                 # priories = deepcopy(data)
 
-                pscores, datainputs, tick, predictions = npredict.infer_unfolding(deepcopy(eng), deepcopy(data), deepcopy(pticks), reset_potentials,
-                                                                                      propagation_count=20, refractoryperiod=ref, divergence=div)
+                pscores, datainputs, tick, reap, predictions, pdistinct = npredict.infer_unfolding(deepcopy(eng), deepcopy(data), deepcopy(pticks), reset_potentials,
+                                                                                                   propagation_count=20, refractoryperiod=ref, divergence=div)
 
                 # print(f"D: {div} R: {ref}")
                 # pp.pprint(predictions)
@@ -1152,13 +1240,14 @@ while True:
                     try:
                         # check if items in datacompare are also in predictions list
                         sc = [p[1] for d in dataCompare[t]
-                              for p in predictions[t] if p[0] == d][0]
+                              for p in pdistinct[t] if p[0] == d][0]
                         # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
                         potacc += sc
                         # print(t, dataCompare[t], sc, predictions[t])
 
                         dcomp = dataCompare[t]
-                        pcomp = [p[0] for p in predictions[t]][:len(dataCompare[t])]
+                        pcomp = [p[0]
+                                 for p in pdistinct[t]][:len(dataCompare[t])]
 
                         ctxcorr += len(list(set(dcomp) & set(pcomp)))
                         # if ctxcorr > 0:
@@ -1173,13 +1262,15 @@ while True:
                 del datainputs
                 del tick
                 del predictions
+                del pdistinct
 
                 try:
                     ctxpotacc = potacc * (1 - ctxloss/ctxcount)
                 except:
                     pass
 
-                print(f"Diverg: {div} Refrac: {ref} PotTtl: {potacc:0.2f} CtxLoss: {ctxloss/ctxcount:0.2f} CtxAcc: {ctxcorr} CtxPotDist: {ctxpotacc:0.2f}")
+                print(
+                    f"Diverg: {div} Refrac: {ref} PotTtl: {potacc:0.2f} CtxLoss: {ctxloss/ctxcount:0.2f} CtxAcc: {ctxcorr} CtxPotDist: {ctxpotacc:0.2f}")
                 accres.append((div, ref, potacc, ctxloss / ctxcount,
                               ctxcorr, ctxpotacc))
 
@@ -1193,7 +1284,8 @@ while True:
         pp.pprint(accres[:5])
         tops.extend(deepcopy(accres[:5]))
 
-        tag = input("Save results to ctxacc.csv with tag: (leave empty, no save)? ")
+        tag = input(
+            "Save results to ctxacc.csv with tag: (leave empty, no save)? ")
 
         if tag != "":
             composeorder = ""
@@ -1206,7 +1298,6 @@ while True:
             else:
                 composeorder += "A"
             tag = f"B{eng.network.params['BindingCount']}L{eng.network.params['PropagationLevels']}_{composeorder}_{tag}"
-
 
             try:
                 fs = open("./states/ctxacc.csv", "r")

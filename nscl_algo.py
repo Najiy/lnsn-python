@@ -23,7 +23,7 @@ class NSCLAlgo:
     #         yield lst[i : i + n]
 
     def chunks(lst, n):
-        return [sorted(lst[i : i + n]) for i in range(0, len(lst), n)]
+        return [sorted(lst[i: i + n]) for i in range(0, len(lst), n)]
 
     # def expo_decay_2(t):
     #     return math.exp(-t / 4)
@@ -57,7 +57,8 @@ class NSCLAlgo:
         synapses = eng.network.synapses
 
         pre = neurones[pre_NSymbol] if pre_NSymbol in neurones.keys() else None
-        post = neurones[post_NSymbol] if post_NSymbol in neurones.keys() else None
+        post = neurones[post_NSymbol] if post_NSymbol in neurones.keys(
+        ) else None
 
         if not pre or not post or pre_NSymbol == post_NSymbol:
             print("new synapse error (%s->%s) " % (pre_NSymbol, post_NSymbol))
@@ -68,7 +69,8 @@ class NSCLAlgo:
         if sname in synapses:
             return "reinforce"
 
-        syn = nscl.NSCL.SSynapse(pre_NSymbol, post_NSymbol, wgt, counter, lastspike)
+        syn = nscl.NSCL.SSynapse(
+            pre_NSymbol, post_NSymbol, wgt, counter, lastspike)
         eng.network.synapses[syn.name()] = syn
         if post_NSymbol not in pre.fsynapses:
             pre.fsynapses.append(post_NSymbol)
@@ -85,13 +87,17 @@ class NSCLAlgo:
         pneurones = eng.npruned
         psynapses = eng.spruned
 
-        pre = pneurones[pre_NSymbol] if pre_NSymbol in pneurones.keys() else None
-        post = pneurones[post_NSymbol] if post_NSymbol in pneurones.keys() else None
+        pre = pneurones[pre_NSymbol] if pre_NSymbol in pneurones.keys(
+        ) else None
+        post = pneurones[post_NSymbol] if post_NSymbol in pneurones.keys(
+        ) else None
 
         if not pre:
-            pre = neurones[pre_NSymbol] if pre_NSymbol in neurones.keys() else None
+            pre = neurones[pre_NSymbol] if pre_NSymbol in neurones.keys(
+            ) else None
         if not post:
-            post = neurones[post_NSymbol] if post_NSymbol in neurones.keys() else None
+            post = neurones[post_NSymbol] if post_NSymbol in neurones.keys(
+            ) else None
 
         # print("pre", pre)
         # print("post", post)
@@ -99,7 +105,8 @@ class NSCLAlgo:
         # input(f"post_nsymbol {post_NSymbol}")
 
         if not pre or not post or pre_NSymbol == post_NSymbol:
-            print("new pruned synapse error (%s->%s) " % (pre_NSymbol, post_NSymbol))
+            print("new pruned synapse error (%s->%s) " %
+                  (pre_NSymbol, post_NSymbol))
             return "error"
 
         sname = NSCLAlgo.sname(pre_NSymbol, post_NSymbol)
@@ -166,7 +173,8 @@ class NSCLAlgo:
             and neurones[n].level < eng.network.params["PropagationLevels"]
         ]
 
-        nses.sort(key=lambda n: neurones[n].level, reverse=eng.network.params["ComposeByCompositeFirst"])
+        nses.sort(key=lambda n: neurones[n].level,
+                  reverse=eng.network.params["ComposeByCompositeFirst"])
 
         active = NSCLAlgo.chunks(
             nses,
@@ -181,7 +189,7 @@ class NSCLAlgo:
 
         def sortbypotentials(nset):
             if eng.network.params["ComposeByPotentialFirst"]:
-                nset.sort(key=lambda n: neurones[n].potential, reverse = True)
+                nset.sort(key=lambda n: neurones[n].potential, reverse=True)
             return nset
 
         if len(active) >= 1:
@@ -207,7 +215,7 @@ class NSCLAlgo:
                             continue
                         r = NSCLAlgo.new_ssynapse(
                             eng, pre_active, post_new
-                        )  ## this checks if synapse exists, returns reinforce if "reinforce" else returns "created"
+                        )  # this checks if synapse exists, returns reinforce if "reinforce" else returns "created"
                         if r == "reinforce":
                             reinforce_synapse.append((pre_active, post_new))
                         # neurones_down_potentials.append(pre_active)
@@ -243,13 +251,12 @@ class NSCLAlgo:
         except DivisionByZero:
             return 0
 
-
     def algo1(eng, inputs, previnputs, meta={}) -> tuple:
-        
+        # print("Algo 1")
         # print("Algo {")
         # if now == None:
         #     now = datetime.now().isoformat()
-        
+
         errors = []
         activated = []
 
@@ -267,7 +274,7 @@ class NSCLAlgo:
         for i in inputs:
             if i not in neurones.keys():
                 n = NSCLAlgo.new_NSymbol(eng, i)
-                n.potential = 1  ## params["InitialPotential"]
+                n.potential = 1  # params["InitialPotential"]
                 n.occurs += 1
                 n.lastspike = eng.tick  # now
                 gen_nsymbol.append(gen_nsymbol)
@@ -310,9 +317,10 @@ class NSCLAlgo:
                         )
                         neurones[s].potential = min(n.potential, 1.0)
                         synapses[NSCLAlgo.sname(n.name, s)].occurs += 1
-                        synapses[NSCLAlgo.sname(n.name, s)].lastspike = eng.tick
+                        synapses[NSCLAlgo.sname(
+                            n.name, s)].lastspike = eng.tick
                         # ADD TO RE-INFORCE LIST if necessary
-                    
+
                     except Exception as e:
                         errors.append(str(e))
 
@@ -337,7 +345,8 @@ class NSCLAlgo:
         #     neurones[d].potential *= params["DownPotentialFactor"]
 
         # ReinforceSynapses()
-        reinforce_synapse = NSCLAlgo.functional_plasticity(eng, rsynapse, eng.tick)
+        reinforce_synapse = NSCLAlgo.functional_plasticity(
+            eng, rsynapse, eng.tick)
         # NSCLAlgo.relevel(eng)
 
         # print("}")
@@ -366,18 +375,20 @@ class NSCLAlgo:
             # "trace1": [neurones[n].potential for n in neurones],
             reinforce_synapse,
             errors,
-            activated
+            activated,
+            []
             # "new_nsymbol": ,
             # "new_syn": ,
         )
 
-
     def algo2(eng, inputs, previnputs, meta={}) -> tuple:
-        
+
+        # print("Algo 2")
+
         # print("Algo {")
         # if now == None:
         #     now = datetime.now().isoformat()
-        
+
         errors = []
         activated = []
 
@@ -393,16 +404,26 @@ class NSCLAlgo:
         gen_nsymbol = []
 
         # input(eng.tick)
-
         # print("tick", eng.tick)
         # print("previous inputs", previnputs)
-        print(eng.tick, "current inputs", inputs)
-        input()
+
+        # print(eng.tick, "prev inputs", previnputs)
+        newprevinputs = []
+        # print(eng.tick, "current inputs", inputs)
+        # input()
 
         for i in inputs:
+            previ = [x for x in previnputs if i == x.replace("*","")]
 
-            if i in previnputs:
-                input(f"{eng.tick} found duplicate for {i}")
+            if len(previ) > 0:
+                previ.sort()
+                inew = previ[-1] + "*"
+                if inew.count("*") > params["MaxRecurrent"]+1:
+                    # input(f"({eng.tick}) found duplicates for {i} in {previ} subset as {inew}")
+                    i = inew
+            
+            newprevinputs.append(i)
+
 
             # prevs = deepcopy(previnputs)
             # prevs = [x for x in prevs if i in x]
@@ -418,7 +439,7 @@ class NSCLAlgo:
 
             if i not in neurones.keys():
                 n = NSCLAlgo.new_NSymbol(eng, i)
-                n.potential = 1  ## params["InitialPotential"]
+                n.potential = 1  # params["InitialPotential"]
                 n.occurs += 1
                 n.lastspike = eng.tick  # now
                 gen_nsymbol.append(gen_nsymbol)
@@ -426,7 +447,9 @@ class NSCLAlgo:
                 neurones[i].potential = 1.0
                 neurones[i].occurs += 1
                 neurones[i].lastspike = eng.tick  # now
-            
+
+
+        previnputs = newprevinputs
 
         # Propagate() - calculates action potentials
         ns = [n for n in neurones.values()]
@@ -462,9 +485,10 @@ class NSCLAlgo:
                         )
                         neurones[s].potential = min(n.potential, 1.0)
                         synapses[NSCLAlgo.sname(n.name, s)].occurs += 1
-                        synapses[NSCLAlgo.sname(n.name, s)].lastspike = eng.tick
+                        synapses[NSCLAlgo.sname(
+                            n.name, s)].lastspike = eng.tick
                         # ADD TO RE-INFORCE LIST if necessary
-                    
+
                     except Exception as e:
                         errors.append(str(e))
 
@@ -489,7 +513,8 @@ class NSCLAlgo:
         #     neurones[d].potential *= params["DownPotentialFactor"]
 
         # ReinforceSynapses()
-        reinforce_synapse = NSCLAlgo.functional_plasticity(eng, rsynapse, eng.tick)
+        reinforce_synapse = NSCLAlgo.functional_plasticity(
+            eng, rsynapse, eng.tick)
         # NSCLAlgo.relevel(eng)
 
         # print("}")
@@ -518,7 +543,8 @@ class NSCLAlgo:
             # "trace1": [neurones[n].potential for n in neurones],
             reinforce_synapse,
             errors,
-            activated
+            activated,
+            previnputs
             # "new_nsymbol": ,
             # "new_syn": ,
         )

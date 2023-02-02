@@ -19,13 +19,12 @@ def mergeDictionary(dict_1, dict_2):
             dict_3[key] = [value, dict_1[key]]
     return dict_3
 
-
 class NSCLPredict:
     def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2):
 
         tick = min(list(datainputs.keys()))
 
-        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count, rea=([], [], [])):
+        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count, reap=([], [], [], [])):
 
             # propagate & capture
             # times = list(datainputs.keys())
@@ -34,16 +33,16 @@ class NSCLPredict:
             templist = []
             prev_inputs = []
 
-            r, e, a = rea
+            r, e, a, p = reap
 
             for t in datainputs:
                 if len(datainputs[t]) == 0:
-                    r, e, a = eng.algo([], a)
+                    r, e, a, p = eng.algo([], p)
                     for i in a:
                         templist.append(
                             (t, i, eng.network.neurones[i].potential))
                 else:
-                    r, e, a = eng.algo(datainputs[t], a)
+                    r, e, a, p = eng.algo(datainputs[t], p)
                     for i in a:
                         templist.append(
                             (t, i, eng.network.neurones[i].potential))
@@ -52,7 +51,7 @@ class NSCLPredict:
                 tick += 1
 
             for t in range(propagation_count):
-                r, e, a = eng.algo([], a)
+                r, e, a, p = eng.algo([], p)
                 for i in a:
                     templist.append(
                         (tick, i, eng.network.neurones[i].potential))
@@ -83,7 +82,7 @@ class NSCLPredict:
 
             return pscores, datainputs, tick, (r, e, a)
 
-        def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001, rea=([], [], [])):
+        def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001, reap=([], [], [], [])):
 
             times = list(datainputs.keys())
             times.sort()
@@ -95,10 +94,10 @@ class NSCLPredict:
             # print('datainput before', datainputs, '\n')
             # print(templist)
 
-            r, e, a = rea
+            r, e, a, p = reap
 
             if len(datainputs[tick-1]) == 0:
-                r, e, a = eng.algo([], a)
+                r, e, a, p = eng.algo([], p)
                 for i in a:
                     templist.append(
                         (tick, i, eng.network.neurones[i].potential))
@@ -108,7 +107,7 @@ class NSCLPredict:
                     prev = datainputs[tick-2]
                 except:
                     pass
-                r, e, a = eng.algo(datainputs[tick-1], a)
+                r, e, a, p = eng.algo(datainputs[tick-1], p)
                 for i in a:
                     templist.append(
                         (tick, i, eng.network.neurones[i].potential))
@@ -117,7 +116,7 @@ class NSCLPredict:
             # tick += 1
 
             for t in range(propagation_count):
-                r, e, a = eng.algo([], a)
+                r, e, a, p = eng.algo([], p)
                 for i in a:
                     templist.append(
                         (tick, i, eng.network.neurones[i].potential))
@@ -194,21 +193,54 @@ class NSCLPredict:
 
         predictions = {}
 
-        pscores, datainputs, tick, rea = feed_all(
+        pscores, datainputs, tick, reap = feed_all(
             datainputs, pscores={}, propagation_count=propagation_count)
         # pp.pprint(datainputs)
         # pp.pprint(pscores)
 
         for i in range(len(datainputs), pticks):
             try:
-                _pscores, _datainputs, _tick, _rea, _predictions = feed_once(
+                _pscores, _datainputs, _tick, _reap, _predictions = feed_once(
                     datainputs, tick, pscores, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, predictions=predictions, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'])
-                pscores, datainputs, tick, rea,  predictions = (
-                    _pscores, _datainputs, _tick, rea, _predictions)
+                pscores, datainputs, tick, reap,  predictions = (
+                    _pscores, _datainputs, _tick, _reap, _predictions)
             except:
                 break
 
-        return pscores, datainputs, tick, rea, predictions
+        # pdisttemp = {}
+
+        # for t in predictions:
+        #     if t not in pdisttemp:
+        #         pdisttemp[t] = {}
+        #     for i in predictions[t]:
+        #         p = i[0].replace("*","")
+        #         if p not in pdisttemp[t]:
+        #             pdisttemp[t][p] = i[1]
+        #         else:
+        #             pdisttemp[t][p] += i[1]
+
+        # pdistinct = {}
+
+        # for t in pdisttemp:
+        #     pdistinct[t] = []
+        #     for k in pdisttemp[t]:
+        #         pdistinct[t].append((k, pdisttemp[t][k]))
+        #     pdistinct[t].sort(key=lambda x: x[1], reverse=True)
+
+
+        pdistinct = {}
+
+        for t in pscores:
+            if t not in pdistinct:
+                pdistinct[t] = {}
+            for k in pscores[t]:
+                pk = k.replace("*", "")
+                if pk not in pdistinct[t]:
+                    pdistinct[t][pk] = pscores[t][k]
+                else:
+                    pdistinct[t][pk] += pscores[t][k]
+
+        return pscores, datainputs, tick, reap, predictions, pdistinct
 
     def save_predictions(fname, content):
 

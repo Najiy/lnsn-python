@@ -82,7 +82,7 @@ def convert_traces(filename, scount, fcount, annotLabels, xlabel=None, ylabel=No
     for i in range(fcount):
         headers.append(f'F{i}')
 
-    neuralData = tdata['tscores_prod']
+    neuralData = tdata['pscores_prod']
 
     tkeys = list(neuralData.keys())
     tkeys.sort()
@@ -146,10 +146,14 @@ def convert_traces(filename, scount, fcount, annotLabels, xlabel=None, ylabel=No
     # tkeys[:] = [str(int(t)+1) for t in tkeys]
 
     pp.pprint(sensors)
+    for s in sensors:
+        print(len(s))
+    input()
 
     df_data = pd.DataFrame(data=sensors)
     df_data = df_data[df_data.columns[::-1]].transpose()
     df_labels = deepcopy(df_data)
+
 
     for col in df_labels:
         df_labels[col].values[df_labels[col].values < 0.0010] = 0
@@ -223,18 +227,23 @@ def subplotgraph(datafiles=[], maxx=None, lblfontsize=10, xlabel=None, ylabel=No
     plt.show()
 
 
-datafiles = ['B2L3_RSIN3_26_36.json',
-             'B2L3_RSIN3_55_64.json',
+datafiles = ['distinct_graph_test.json',
+            #  'B2L3_RSIN3_55_64.json',
             #  'B2L3_RSAW3_15_24.json'
              ]
+
+# datafiles = ['B2L3_RSIN3_26_36.json',
+#              'B2L3_RSIN3_55_64.json',
+#             #  'B2L3_RSAW3_15_24.json'
+#              ]
 
 for f in datafiles:
     plotgraph(f, subres=(xres, yres), lblfontsize=11,
               annotLabels=sawAnnotLabels)
 
-datafiles2 = ['B2L3_RSIN3_26_27.json', 'B2L3_RSIN3_26_31.json',
-              'B2L3_RSIN3_26_28.json', 'B2L3_RSIN3_26_32.json',
-              'B2L3_RSIN3_26_29.json', 'B2L3_RSIN3_26_34.json',
-              'B2L3_RSIN3_26_30.json', 'B2L3_RSIN3_26_35.json']
+# datafiles2 = ['B2L3_RSIN3_26_27.json', 'B2L3_RSIN3_26_31.json',
+#               'B2L3_RSIN3_26_28.json', 'B2L3_RSIN3_26_32.json',
+#               'B2L3_RSIN3_26_29.json', 'B2L3_RSIN3_26_34.json',
+#               'B2L3_RSIN3_26_30.json', 'B2L3_RSIN3_26_35.json']
 
-subplotgraph(datafiles2, maxx=10, xlabel=None, ylabel=None, lblfontsize=11)
+# subplotgraph(datafiles2, maxx=10, xlabel=None, ylabel=None, lblfontsize=11)

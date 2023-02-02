@@ -265,11 +265,11 @@ class NSCL:
         #             self.remove_neurone(n)
 
         def algo(self, inputs, previnputs, meta={}) -> tuple:
-            r, errors, activated = self._algo(self, inputs, previnputs, meta)
+            r, errors, activated, previnputs = self._algo(self, inputs, previnputs, meta)
             it = self.tick
 
             self.tick += 1
-            return r, errors, activated
+            return r, errors, activated, previnputs
 
         def neurones(self) -> dict:
             return self.network.neurones

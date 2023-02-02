@@ -89,7 +89,7 @@ testX = np.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 model = createModel()
 
 model.compile(optimizer='adam', loss='mean_squared_error')
-model.fit(trainX, trainY, epochs=20, batch_size=1, verbose=2)
+model.fit(trainX, trainY, epochs=5, batch_size=1, verbose=2)
 
 
 
@@ -116,6 +116,11 @@ testPredictPlot = np.empty_like(dataset)
 testPredictPlot[:, :] = np.nan
 testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
 testPredictPlot = np.rint(testPredictPlot)
+
+
+
+fig, axs = plt.subplots(1, 1)
+fig.set_size_inches(16, 8)
 
 plt.plot(scaler.inverse_transform(dataset))
 plt.plot(trainPredictPlot)
