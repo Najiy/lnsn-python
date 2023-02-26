@@ -106,174 +106,204 @@ def flatten(traces) -> list:
     return [item for sublist in traces for item in sublist]
 
 
-def heatmap(
-    result_path,
-    traces,
-    neurones,
-    figsize=(24, 12),
-    save=False,
-    ax=None,
-    theme="viridis",
-):
-    print(" -heatplot")
+# def heatmap(
+#     result_path,
+#     traces,
+#     neurones,
+#     figsize=(24, 12),
+#     save=False,
+#     ax=None,
+#     theme="viridis",
+# ):
+#     print(" -heatplot")
 
-    my_colors = [(0.2, 0.3, 0.3), (0.4, 0.5, 0.4),
-                 (0.1, 0.7, 0), (0.1, 0.7, 0)]
+#     my_colors = [(0.2, 0.3, 0.3), (0.4, 0.5, 0.4),
+#                  (0.1, 0.7, 0), (0.1, 0.7, 0)]
 
-    tlength = len(traces)
-    arr_t = np.array(traces).T
-    # c = sns.color_palette("vlag", as_cmap=True)
-    # c = sns.cubehelix_palette(start=2, rot=0, dark=0, light=.95, reverse=True, as_cmap=YlGnBu)
+#     tlength = len(traces)
+#     arr_t = np.array(traces).T
+#     # c = sns.color_palette("vlag", as_cmap=True)
+#     # c = sns.cubehelix_palette(start=2, rot=0, dark=0, light=.95, reverse=True, as_cmap=YlGnBu)
 
-    if save == True:
-        plt.figure(figsize=figsize)
+#     if save == True:
+#         plt.figure(figsize=figsize)
 
-    heatplot = sns.heatmap(
-        arr_t,
-        # linewidth= (0.01 if tlength < 100 else 0.0),
-        linewidths=0.01,
-        yticklabels=neurones,
-        # cmap="YlGnBu",
-        cmap=theme,
-        # cmap=my_colors,
-        vmin=0,
-        vmax=1,
-        # linewidths=0.01,
-        square=True,
-        linecolor="#222",
-        annot_kws={"fontsize": 11},
-        # linecolor=(0.1,0.2,0.2),
-        xticklabels=10,
-        cbar=save,
-        ax=ax,
-    )
+#     heatplot = sns.heatmap(
+#         arr_t,
+#         # linewidth= (0.01 if tlength < 100 else 0.0),
+#         linewidths=0.01,
+#         yticklabels=neurones,
+#         # cmap="YlGnBu",
+#         cmap=theme,
+#         # cmap=my_colors,
+#         vmin=0,
+#         vmax=1,
+#         # linewidths=0.01,
+#         square=True,
+#         linecolor="#222",
+#         annot_kws={"fontsize": 11},
+#         # linecolor=(0.1,0.2,0.2),
+#         xticklabels=10,
+#         cbar=save,
+#         ax=ax,
+#     )
 
-    # colorbar = ax.collections[0].colorbar
-    # M=dt_tweet_cnt.max().max()
-    # colorbar.set_ticks([1/8*M,3/8*M,6/8*M])
-    # colorbar.set_ticklabels(['low','med','high'])
+#     # colorbar = ax.collections[0].colorbar
+#     # M=dt_tweet_cnt.max().max()
+#     # colorbar.set_ticks([1/8*M,3/8*M,6/8*M])
+#     # colorbar.set_ticklabels(['low','med','high'])
 
-    if save == True:
-        plt.tight_layout()
-        plt.savefig(result_path + pathdiv + r"Figure_1.png", dpi=120)
-        plt.clf()
+#     if save == True:
+#         plt.tight_layout()
+#         plt.savefig(result_path + pathdiv + r"Figure_1.png", dpi=120)
+#         plt.clf()
 
-    return heatplot
-
-
-def lineplot(
-    result_path, data_plot, figsize=(15, 8), save=False, ax=None, theme="flare"
-):
-    print(" -lineplot")
-    if save == True:
-        plt.figure(figsize=figsize)
-
-    lplot = sns.lineplot(
-        x="time", y="ncounts", data=data_plot, hue="ntype", ax=ax
-    )  # , palette=theme)
-
-    # for i in data_plot:
-    #     input(data_plot[i])
-
-    # lplot = plt.stackplot(x=range(0,60), y=data_plot, labels=["inputs", "generated", "total"])
-
-    if save == True:
-        plt.tight_layout()
-        plt.savefig(result_path + pathdiv + r"Figure_2.png", dpi=120)
-        plt.clf()
-
-    return lplot
+#     return heatplot
 
 
-def networkx(result_path, synapses, figsize=(24, 12), save=False, ncolor="skyblue"):
-    print(" -networkplot")
-    plt.figure(figsize=figsize)
-    # Build a dataframe with your connections
-    df = pd.DataFrame(
-        {
-            "from": [synapses[s].rref for s in synapses],
-            "to": [synapses[s].fref for s in synapses],
-            "value": [synapses[s].wgt for s in synapses],
-        }
-    )
+# def lineplot(
+#     result_path, data_plot, figsize=(15, 8), save=False, ax=None, theme="flare"
+# ):
+#     print(" -lineplot")
+#     if save == True:
+#         plt.figure(figsize=figsize)
 
-    # Build your graph
-    G = nx.from_pandas_edgelist(df, "from", "to", create_using=nx.DiGraph())
+#     lplot = sns.lineplot(
+#         x="time", y="ncounts", data=data_plot, hue="ntype", ax=ax
+#     )  # , palette=theme)
 
-    # pos = graphviz_layout(G, prog='dot')
+#     # for i in data_plot:
+#     #     input(data_plot[i])
 
-    # Custom the nodes:
-    nx.draw(
-        G,
-        # pos,
-        with_labels=True,
-        node_color=ncolor,
-        node_size=1200,
-        edge_color=df["value"],
-        width=5.0,
-        alpha=0.9,
-        edge_cmap=plt.cm.Blues,
-        arrows=True,
-        # pos=nx.layout.planar_layout(G)
-    )
-    # plt.show()
-    # plt.figure(figsize=figsize)
-    if save == True:
-        plt.savefig(result_path + pathdiv + r"Figure_3.png", dpi=120)
-        plt.clf()
+#     # lplot = plt.stackplot(x=range(0,60), y=data_plot, labels=["inputs", "generated", "total"])
 
-    return G
+#     if save == True:
+#         plt.tight_layout()
+#         plt.savefig(result_path + pathdiv + r"Figure_2.png", dpi=120)
+#         plt.clf()
+
+#     return lplot
 
 
-def networkx_pyvis(
-    result_path, synapses, figsize=(24, 12), save=False, ncolor="skyblue"
-):
-    print(" -networkplot")
-    plt.figure(figsize=figsize)
-    # Build a dataframe with your connections
-    df = pd.DataFrame(
-        {
-            "from": [synapses[s].rref for s in synapses],
-            "to": [synapses[s].fref for s in synapses],
-            "value": [synapses[s].wgt for s in synapses],
-        }
-    )
+# def networkx(result_path, synapses, figsize=(24, 12), save=False, ncolor="skyblue"):
+#     print(" -networkplot")
+#     plt.figure(figsize=figsize)
+#     # Build a dataframe with your connections
+#     df = pd.DataFrame(
+#         {
+#             "from": [synapses[s].rref for s in synapses],
+#             "to": [synapses[s].fref for s in synapses],
+#             "value": [synapses[s].wgt for s in synapses],
+#         }
+#     )
 
-    # Build your graph
-    G = nx.from_pandas_edgelist(df, "from", "to", create_using=nx.DiGraph())
+#     # Build your graph
+#     G = nx.from_pandas_edgelist(df, "from", "to", create_using=nx.DiGraph())
 
-    # pos = graphviz_layout(G, prog='dot')
+#     # pos = graphviz_layout(G, prog='dot')
 
-    # Custom the nodes:
-    nx.draw(
-        G,
-        # pos,
-        with_labels=True,
-        node_color=ncolor,
-        node_size=1200,
-        edge_color=df["value"],
-        width=5.0,
-        alpha=0.9,
-        edge_cmap=plt.cm.Blues,
-        arrows=True,
-        # pos=nx.layout.planar_layout(G)
-    )
-    # plt.show()
-    # plt.figure(figsize=figsize)
-    if save == True:
-        plt.savefig(result_path + pathdiv + r"Figure_3.png", dpi=120)
-        plt.clf()
+#     # Custom the nodes:
+#     nx.draw(
+#         G,
+#         # pos,
+#         with_labels=True,
+#         node_color=ncolor,
+#         node_size=1200,
+#         edge_color=df["value"],
+#         width=5.0,
+#         alpha=0.9,
+#         edge_cmap=plt.cm.Blues,
+#         arrows=True,
+#         # pos=nx.layout.planar_layout(G)
+#     )
+#     # plt.show()
+#     # plt.figure(figsize=figsize)
+#     if save == True:
+#         plt.savefig(result_path + pathdiv + r"Figure_3.png", dpi=120)
+#         plt.clf()
 
-    #####################
+#     return G
 
-    net = Network(notebook=False, width=1600, height=900)
-    net.toggle_hide_edges_on_drag(False)
-    net.barnes_hut()
-    net.from_nx(nx.davis_southern_women_graph())
-    net.show("ex.html")
 
-    return G
+# def networkx_pyvis(
+#     result_path, synapses, figsize=(24, 12), save=False, ncolor="skyblue"
+# ):
+#     print(" -networkplot")
+#     plt.figure(figsize=figsize)
+#     # Build a dataframe with your connections
+#     df = pd.DataFrame(
+#         {
+#             "from": [synapses[s].rref for s in synapses],
+#             "to": [synapses[s].fref for s in synapses],
+#             "value": [synapses[s].wgt for s in synapses],
+#         }
+#     )
 
+#     # Build your graph
+#     G = nx.from_pandas_edgelist(df, "from", "to", create_using=nx.DiGraph())
+
+#     # pos = graphviz_layout(G, prog='dot')
+
+#     # Custom the nodes:
+#     nx.draw(
+#         G,
+#         # pos,
+#         with_labels=True,
+#         node_color=ncolor,
+#         node_size=1200,
+#         edge_color=df["value"],
+#         width=5.0,
+#         alpha=0.9,
+#         edge_cmap=plt.cm.Blues,
+#         arrows=True,
+#         # pos=nx.layout.planar_layout(G)
+#     )
+#     # plt.show()
+#     # plt.figure(figsize=figsize)
+#     if save == True:
+#         plt.savefig(result_path + pathdiv + r"Figure_3.png", dpi=120)
+#         plt.clf()
+
+#     #####################
+
+#     net = Network(notebook=False, width=1600, height=900)
+#     net.toggle_hide_edges_on_drag(False)
+#     net.barnes_hut()
+#     net.from_nx(nx.davis_southern_women_graph())
+#     net.show("ex.html")
+
+#     return G
+
+def boxplot(data, title):
+
+
+    sns.set_theme(style="ticks")
+
+    # Initialize the figure with a logarithmic x axis
+    f, ax = plt.subplots(figsize=(7, 6))
+    ax.set_xscale("log")
+
+    # Load the example planets dataset
+    # planets = sns.load_dataset("planets")
+    # planets = data
+
+    # pp.pprint(data)
+
+    # Plot the orbital period with horizontal boxes
+    sns.boxplot(x="interval", y="activity", data=data,
+                whis=[0, 100], width=.6, palette="vlag").set(title=f'MIT Sensor Event Intevals ({title})')
+
+    # Add in points to show each observation
+    sns.stripplot(x="interval", y="activity", data=data,
+                size=4, color=".3", linewidth=0)
+
+    # Tweak the visual presentation
+    ax.xaxis.grid(True)
+    ax.set(ylabel="Activities")
+    ax.set(xlabel=f"Event intervals")
+    sns.despine(trim=True, left=True)
+    plt.tight_layout()
+    plt.show()
 
 def jsondump(result_path, fnameext, jdata):
     if not exists(result_path):
@@ -282,37 +312,37 @@ def jsondump(result_path, fnameext, jdata):
         json.dump(jdata, outfile)
 
 
-def graphout(eng, flush=True):
-    tt = str(datetime.now().replace(microsecond=0)).replace(":", "_")
-    rpath = r"results%s%s" % (pathdiv, tt)
+# def graphout(eng, flush=True):
+#     tt = str(datetime.now().replace(microsecond=0)).replace(":", "_")
+#     rpath = r"results%s%s" % (pathdiv, tt)
 
-    if os.name != "nt":
-        rpath = "results%s%s" % (pathdiv, tt)
-    eng.traces = reshape_trace(eng)
+#     if os.name != "nt":
+#         rpath = "results%s%s" % (pathdiv, tt)
+#     eng.traces = reshape_trace(eng)
 
-    print("%s" % rpath)
+#     print("%s" % rpath)
 
-    if not os.path.exists("results"):
-        os.mkdir("results")
+#     if not os.path.exists("results"):
+#         os.mkdir("results")
 
-    if not os.path.exists(rpath):
-        os.mkdir(rpath)
+#     if not os.path.exists(rpath):
+#         os.mkdir(rpath)
 
-    fig, ax = plt.subplots(2, 1, figsize=(24, 12))
-    df = pd.DataFrame(
-        {"time": eng.ntime, "ncounts": eng.ncounts, "ntype": eng.nmask})
-    sns.set_theme()
-    heatmap(rpath, eng.traces, eng.network.neurones, ax=ax[0])
-    lineplot(rpath, df, ax=ax[1])
-    plt.savefig(f"{rpath}{pathdiv}Figure_1-2.png", dpi=120)
-    plt.clf()
-    heatmap(rpath, eng.traces, eng.network.neurones, save=True)
-    lineplot(rpath, df, save=True)
-    networkx(rpath, eng.network.synapses, save=True)
-    networkx_pyvis(rpath, eng.network.synapses, save=True)
+#     fig, ax = plt.subplots(2, 1, figsize=(24, 12))
+#     df = pd.DataFrame(
+#         {"time": eng.ntime, "ncounts": eng.ncounts, "ntype": eng.nmask})
+#     sns.set_theme()
+#     heatmap(rpath, eng.traces, eng.network.neurones, ax=ax[0])
+#     lineplot(rpath, df, ax=ax[1])
+#     plt.savefig(f"{rpath}{pathdiv}Figure_1-2.png", dpi=120)
+#     plt.clf()
+#     heatmap(rpath, eng.traces, eng.network.neurones, save=True)
+#     lineplot(rpath, df, save=True)
+#     networkx(rpath, eng.network.synapses, save=True)
+#     networkx_pyvis(rpath, eng.network.synapses, save=True)
 
-    if flush == True:
-        eng.clear_traces()
+#     if flush == True:
+#         eng.clear_traces()
 
 
 def stream(streamfile, trace=True):
@@ -543,6 +573,9 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
                 # input(data[eng.tick])
 
                 # print('Algo2 previous')
+                print('algo')
+                print(data[eng.tick])
+                input()
                 r, e, a, p = eng.algo(data[eng.tick], p)
                 # print('input', data[eng.tick-1])
 
@@ -551,8 +584,8 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
             if next_prompt and input("[enter] for next step ('r' for no-prompt): ") == 'r':
                 next_prompt = False
 
-            if eng.tick == maxit and trace == True:
-                graphout(eng)
+            # if eng.tick == maxit and trace == True:
+            #     graphout(eng)
 
             if eng.tick in save_range:
                 save_range.remove(eng.tick)
@@ -574,6 +607,11 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
 
     print("\n csv streaming done.")
     print()
+
+
+def jstream_test(filename):
+    jfp = open(filename, 'r')
+    return json.load(jfp)
 
 
 def load_data(streamfile, metafile, trace=False, fname="default", exclude_values=["", "0"], exclude_headers=["current", "humidity", "temperature"]):
@@ -932,6 +970,73 @@ def graph_distinct_predictions(pdistinct):
     plt.show()
 
 
+# converts json dictionary to algo-ready array
+def jstream_to_algodict(jdict, tpad=0):
+    data = {}
+
+    lowest = 0
+    highest = 0
+
+    # if tpad < 0:
+
+    # for activity in jdict:
+    #     for instance in jdict[activity]:
+    #         for sensor in instance:
+
+    #             if lowest == 0 or lowest > sensor[1]:
+    #                 lowest = sensor[1]
+    #             if highest == 0 or highest < sensor[2]:
+    #                 highest =sensor[2]
+
+    #             print(sensor, lowest, highest)
+
+    for activity in jdict:
+        for instance in jdict[activity]:
+            for sensor in instance:
+
+                # if lowest == 0 or lowest > sensor[1]:
+                #     lowest = sensor[1]
+                # if highest == 0 or highest < sensor[2]:
+                #     highest = sensor[2]
+
+                # print(sensor, lowest, highest)
+                # input()
+
+                if sensor[1] not in data:
+                    data[sensor[1]] = []
+                data[sensor[1]].append(f'S{sensor[0]}~1')
+
+                if sensor[2] not in data:
+                    data[sensor[2]] = []
+                data[sensor[2]].append(f'S{sensor[0]}~0')
+
+    lowest = min(data.keys())
+    highest = max(data.keys())
+
+    print("lowest", lowest, "highest", highest)
+    input()
+
+    # merged timestamp
+    if tpad >= 0:
+        data.clear()
+        # tcounter = 0
+        for activity in jdict:
+            for instance in jdict[activity]:
+                for sensor in instance:
+                    tact = sensor[1] - lowest
+                    if tact not in data:
+                        data[tact] = []
+                    data[tact].append(f'S{sensor[0]}~1')
+
+                    tdeact = sensor[2] - lowest
+                    if tdeact not in data:
+                        data[tdeact] = []
+                    data[tdeact].append(f'S{sensor[0]}~0')
+                # tcounter += 1
+
+    pp.pprint(data)
+
+
 ######### main prog starts #########
 args = sys.argv[1:]
 
@@ -1002,6 +1107,101 @@ while True:
         epoch = int(input('Epoch: '))
         print(" streaming csv dataset as input - %s" % (command[1]))
         csvstream(command[1], command[2], False, command[3], epoch)
+
+    if command[0] == "jstream_test":
+        data = jstream_test('dataset online/MIT/subject1/activities_dict.json')
+        keys = data.keys()
+
+        include_keys = ['Watching TV',
+                        'Putting away groceries', 'Preparing breakfast']
+
+        included_data = {}
+
+        # watching_tv = data['Watching TV']
+        # watching_tv_lengths = []
+
+        lowest = 0
+        highest = 0
+
+        intervals_onoff = {'activity':[], 'interval':[]}
+        intervals_on = {'activity':[], 'interval':[]}
+        intervals_off = {'activity':[], 'interval':[]}
+
+        for include in keys:
+            for instance in data[include]:
+
+                lengths = instance[-1][1] - instance[0][1]
+                instance = sorted(instance, key=lambda x: x[1], reverse=False)
+
+                # for idx, value in enumerate(instance):
+                #     instance[idx][1] = value[1] - instance[0][1]
+
+                # pp.pprint(instance)
+                # input()
+
+                # watching_tv_lengths.append(lengths)
+                # print(lengths)
+
+                # if lowest == 0:
+                #     lowest = lengths
+                # elif lowest > lengths:
+                #     lowest = lengths
+
+                # if highest == 0:
+                #     highest = lengths
+                # elif highest < lengths:
+                #     highest = lengths
+
+                # print(include)
+                # print('lowest', lowest, 'highest', highest, 'average')
+                # print('instances', instances)
+
+                # pp.pprint(data[include])
+
+                if include not in included_data:
+                    included_data[include] = []
+
+                included_data[include].append(instance)
+            
+            timelogs = []
+
+            for instance in data[include]:
+                for entry in instance:
+                    timelogs.append((entry[1], f'{entry[0]} On'))
+                    timelogs.append((entry[2], f'{entry[0]} Off'))
+
+            timelogs = sorted(timelogs, key=lambda x: x[0], reverse=False)
+            timelogs_on = [x for x in timelogs if 'On' in x[1]]
+            timelogs_off = [x for x in timelogs if 'Off' in x[1]]
+
+            for i in range(len(timelogs)-1):
+                intervals_onoff['activity'].append(include)
+                intervals_onoff['interval'].append(timelogs[i+1][0] - timelogs[i][0])
+
+            for i in range(len(timelogs_on)-1):
+                intervals_on['activity'].append(include)
+                intervals_on['interval'].append(timelogs_on[i+1][0] - timelogs_on[i][0])
+            
+            for i in range(len(timelogs_off)-1):
+                intervals_off['activity'].append(include)
+                intervals_off['interval'].append(timelogs_off[i+1][0] - timelogs_off[i][0])
+            # pp.pprint(interval_averages)
+            # input()
+                
+        df = pd.DataFrame.from_dict(intervals_onoff)
+        boxplot(df, 'On/Off')
+
+        df = pd.DataFrame.from_dict(intervals_on)
+        boxplot(df, 'On Only')
+
+        df = pd.DataFrame.from_dict(intervals_off)
+        boxplot(df, 'Off Only')
+
+        # pp.pprint(included_data)
+
+        # jstream_to_algodict(included_data)
+
+        # pp.pprint(included_data)
 
     if command[0] in ["tracepaths", "trace", "traces", "paths", "path"]:
         limits = float(command[1])
