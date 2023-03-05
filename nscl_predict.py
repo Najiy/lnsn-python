@@ -20,18 +20,18 @@ def mergeDictionary(dict_1, dict_2):
     return dict_3
 
 class NSCLPredict:
-    def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2):
+    def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2, accprevinp= []):
 
         tick = min(list(datainputs.keys()))
 
-        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count, reap=([], [], [], [])):
+        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count, accprevinp=[], reap=([], [], [], [])):
 
             # propagate & capture
             # times = list(datainputs.keys())
             # times.sort()
 
             templist = []
-            prev_inputs = []
+            # previnputs = []
 
             r, e, a, p = reap
 
@@ -47,8 +47,9 @@ class NSCLPredict:
                         templist.append(
                             (t, i, eng.network.neurones[i].potential))
                 # print(f'processing all, at {t}')
-                prev_inputs = deepcopy(datainputs[t])
+                accprevinp = deepcopy(datainputs[t])
                 tick += 1
+                print()
 
             for t in range(propagation_count):
                 r, e, a, p = eng.algo([], p)

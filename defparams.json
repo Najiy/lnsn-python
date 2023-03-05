@@ -1,16 +1,16 @@
 {
     "BindingCount": 2,
     "PropagationLevels": 3,
-    "PruneInterval": 600,
+    "PruneInterval": 2419200,
     "PruningThreshold": 0.2,
-    "BindingThreshold": 0.5,
+    "BindingThreshold": 0.35,
     "DownPotentialFactor": 0.2,
     "ComposeByPotentialFirst": true,
     "ComposeByCompositeFirst": false,
 
     "FiringThreshold": 0.25,
     "ZeroingThreshold": 0.05,
-    "DecayFactor": 0.6,
+    "DecayFactor": 0.95,
     "InitialPotential": 0.2,
     "ReinforcementRate": 0.3,
     "RefractoryPeriod": 7,
@@ -19,7 +19,7 @@
 
     "DefaultEncoderCeiling": 1024,
     "DefaultEncoderFloor": 0,
-    "DefaultEncoderResolution": 10,
+    "DefaultEncoderResolution": 1,
 
     "TraceLength": 60,
     "InferDivergence": 4,

@@ -276,7 +276,6 @@ def flatten(traces) -> list:
 
 def boxplot(data, title):
 
-
     sns.set_theme(style="ticks")
 
     # Initialize the figure with a logarithmic x axis
@@ -295,7 +294,7 @@ def boxplot(data, title):
 
     # Add in points to show each observation
     sns.stripplot(x="interval", y="activity", data=data,
-                size=4, color=".3", linewidth=0)
+                  size=4, color=".3", linewidth=0)
 
     # Tweak the visual presentation
     ax.xaxis.grid(True)
@@ -304,6 +303,7 @@ def boxplot(data, title):
     sns.despine(trim=True, left=True)
     plt.tight_layout()
     plt.show()
+
 
 def jsondump(result_path, fnameext, jdata):
     if not exists(result_path):
@@ -343,6 +343,150 @@ def jsondump(result_path, fnameext, jdata):
 
 #     if flush == True:
 #         eng.clear_traces()
+
+def compileneuronegraph(fname="defparams.json", ticks=15, xres=8, yres=4):
+
+    fig, axs = plt.subplots(1, 1)
+
+    def neurone_profile(fname="defparams.json", start=0.30, ticks=15):
+        with open(fname) as jsonfile:
+            defparams = json.loads("\n".join(jsonfile.readlines()))
+            start = defparams["FiringThreshold"] + 0.02
+
+            x = [-4, -3, -2, -1]
+            y = [start-19, start-17, start/2, start-13]
+
+            x_t = [-2, -1]
+            y_t = [
+                defparams["FiringThreshold"],
+                defparams["FiringThreshold"],
+            ]
+
+            x_z = [-2, -1]
+            y_z = [
+                defparams["ZeroingThreshold"],
+                defparams["ZeroingThreshold"],
+            ]
+
+            x_b = [-2, -1]
+            y_b = [
+                defparams["BindingThreshold"],
+                defparams["BindingThreshold"],
+            ]
+
+            value = start
+            refractory = 0
+
+            for i in range(0, ticks):
+                # print(i, value)
+
+                x.append(i)
+                y.append(value)
+
+                x_t.append(i)
+                y_t.append(defparams["FiringThreshold"])
+
+                x_z.append(i)
+                y_z.append(defparams["ZeroingThreshold"])
+
+                x_b.append(i)
+                y_b.append(defparams["BindingThreshold"])
+
+                if value < defparams["ZeroingThreshold"]:
+                    value = 0
+                elif value >= defparams["FiringThreshold"] and refractory == 0:
+                    refractory = defparams["RefractoryPeriod"]
+                    value = 1.0
+                    # x.append(i)
+                    # y.append(value)
+                    value *= defparams["PostSpikeFactor"]
+                else:
+                    value *= defparams["DecayFactor"]
+
+                if refractory > 0:
+                    refractory = -1
+
+            # x = np.linspace(-2, 12, num=11, endpoint=True)
+            # y = np.cos(-x**2/9.0)
+            # xnew = np.linspace(0, 15, num=41, endpoint=True)
+
+            # f_cubic = interp1d(x, y, kind='cubic')
+            # x, y = smooth(x, y)
+
+            for i in range(0, len(x)):
+                if y[i] < defparams["ZeroingThreshold"]:
+                    y[i] = 0
+
+            return (
+                x,
+                y,
+                x_t,
+                y_t,
+                x_z,
+                y_z,
+                x_b,
+                y_b,
+                defparams
+                # defparams["BindingThreshold"],
+            )  # ,xnew, f_cubic(xnew))
+
+    (nprof_x, nprof_y, nthres_x, nthres_y, nzero_x,
+     nzero_y, binding_x, binding_y, defparams) = neurone_profile(fname, ticks=ticks)
+
+    # plt.grid()
+    xcoords = [x for x in range(-2, ticks)]
+    active = [x-4 for x in xcoords if nprof_y[x]
+              >= defparams["BindingThreshold"]]
+    # print(nprof_x)
+    print(nprof_y)
+    # print(active)
+    # active.pop()
+    input(active)
+    inactive = [x for x in xcoords if x not in active]
+
+    for xc in active:
+        plt.axvline(x=xc, color="grey", linestyle="--", alpha=0.4)
+
+    for xc in inactive:
+        plt.axvline(x=xc, color="grey", linestyle="dotted", alpha=0.1)
+
+    # for xc in xcoords:
+    #     plt.axvline(x=xc, color="grey", linestyle="--")
+
+    plt.plot(nthres_x, nthres_y, '--', label="Firing Threshold",
+             color="black", linewidth=1.5)
+    plt.plot(nzero_x, nzero_y, ':', label="Zeroing Threshold",
+             color="black", linewidth=1.5)
+    plt.plot(binding_x, binding_y, '-.', label="Binding Threshold",
+             color="black", linewidth=1.5)
+    plt.plot(nprof_x, nprof_y, label="Action Potential",
+             color="black", linewidth=2)
+
+    # plt.plot(
+    #     [1],
+    #     binding_threshold,
+    #     marker="X",
+    #     markersize=12,
+    #     markeredgecolor="red",
+    #     markerfacecolor="blue",
+    # )
+
+    plt.xlabel("Timestep")
+    plt.ylabel("Neurone Potential")
+    plt.legend(
+        loc="best",
+        bbox_to_anchor=(0, 1.02, 1, 0.2),
+        mode="expand",
+        ncol=1
+    )
+    plt.ylim(ymin=-0.1, ymax=1.1)
+    plt.xlim([-2, ticks-1])
+
+    # plt.show()
+    fig.set_size_inches(xres, yres)
+    plt.tight_layout()
+    # plt.savefig(f"figures/neurone_profile.png", dpi=300)
+    plt.show()
 
 
 def stream(streamfile, trace=True):
@@ -573,9 +717,9 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
                 # input(data[eng.tick])
 
                 # print('Algo2 previous')
-                print('algo')
-                print(data[eng.tick])
-                input()
+                # print('algo')
+                # print(data[eng.tick])
+                # input()
                 r, e, a, p = eng.algo(data[eng.tick], p)
                 # print('input', data[eng.tick-1])
 
@@ -1112,96 +1256,287 @@ while True:
         data = jstream_test('dataset online/MIT/subject1/activities_dict.json')
         keys = data.keys()
 
-        include_keys = ['Watching TV',
-                        'Putting away groceries', 'Preparing breakfast']
+        input(data)
+
+        include_keys = [
+            'Putting away groceries',
+            # 'Watching TV',
+            # 'Preparing breakfast'
+        ]
+
+        include_keys = [x for x in data.keys()]
+
+
+        pprint.pprint(include_keys)
+        input()
 
         included_data = {}
 
         # watching_tv = data['Watching TV']
         # watching_tv_lengths = []
 
-        lowest = 0
-        highest = 0
+        # lowest = 0
+        # highest = 0
 
-        intervals_onoff = {'activity':[], 'interval':[]}
-        intervals_on = {'activity':[], 'interval':[]}
-        intervals_off = {'activity':[], 'interval':[]}
 
-        for include in keys:
+        intervals_onoff = {'activity': [], 'interval': []}
+        intervals_on = {'activity': [], 'interval': []}
+        intervals_off = {'activity': [], 'interval': []}
+        sensors = []
+
+
+        for include in include_keys:
             for instance in data[include]:
 
                 lengths = instance[-1][1] - instance[0][1]
                 instance = sorted(instance, key=lambda x: x[1], reverse=False)
 
-                # for idx, value in enumerate(instance):
-                #     instance[idx][1] = value[1] - instance[0][1]
-
-                # pp.pprint(instance)
-                # input()
-
-                # watching_tv_lengths.append(lengths)
-                # print(lengths)
-
-                # if lowest == 0:
-                #     lowest = lengths
-                # elif lowest > lengths:
-                #     lowest = lengths
-
-                # if highest == 0:
-                #     highest = lengths
-                # elif highest < lengths:
-                #     highest = lengths
-
-                # print(include)
-                # print('lowest', lowest, 'highest', highest, 'average')
-                # print('instances', instances)
-
-                # pp.pprint(data[include])
-
                 if include not in included_data:
                     included_data[include] = []
 
                 included_data[include].append(instance)
-            
+
             timelogs = []
 
             for instance in data[include]:
                 for entry in instance:
-                    timelogs.append((entry[1], f'{entry[0]} On'))
-                    timelogs.append((entry[2], f'{entry[0]} Off'))
+                    timelogs.append((entry[1], int(entry[0]), 1))
+                    timelogs.append((entry[2], int(entry[0]), 0))
 
             timelogs = sorted(timelogs, key=lambda x: x[0], reverse=False)
-            timelogs_on = [x for x in timelogs if 'On' in x[1]]
-            timelogs_off = [x for x in timelogs if 'Off' in x[1]]
+            earliest = timelogs[0][0]
+            latest = timelogs[-1][0]
+            timelogs_on = [x for x in timelogs if x[2] == 1]
+            timelogs_off = [x for x in timelogs if x[2] == 0]
+            sensors.extend(item[1] for item in timelogs)
 
             for i in range(len(timelogs)-1):
                 intervals_onoff['activity'].append(include)
-                intervals_onoff['interval'].append(timelogs[i+1][0] - timelogs[i][0])
+                intervals_onoff['interval'].append(
+                    timelogs[i+1][0] - timelogs[i][0])
 
             for i in range(len(timelogs_on)-1):
                 intervals_on['activity'].append(include)
-                intervals_on['interval'].append(timelogs_on[i+1][0] - timelogs_on[i][0])
-            
+                intervals_on['interval'].append(
+                    timelogs_on[i+1][0] - timelogs_on[i][0])
+
             for i in range(len(timelogs_off)-1):
                 intervals_off['activity'].append(include)
-                intervals_off['interval'].append(timelogs_off[i+1][0] - timelogs_off[i][0])
-            # pp.pprint(interval_averages)
-            # input()
-                
+                intervals_off['interval'].append(
+                    timelogs_off[i+1][0] - timelogs_off[i][0])
+
+        # pp.pprint(included_data)
+        # input()
+
+        sensors = list(set(sensors))
+        sensors.sort()
+        print('sensors', sensors)
+
         df = pd.DataFrame.from_dict(intervals_onoff)
         boxplot(df, 'On/Off')
 
-        df = pd.DataFrame.from_dict(intervals_on)
-        boxplot(df, 'On Only')
+        medians = []
+        for act_unique in df['activity'].unique():
+            print(act_unique, df.loc[df['activity'] == act_unique]['interval'].mean(),
+                  df.loc[df['activity'] == act_unique]['interval'].median())
+            medians.append(
+                df.loc[df['activity'] == act_unique]['interval'].median())
 
-        df = pd.DataFrame.from_dict(intervals_off)
-        boxplot(df, 'Off Only')
+        print('med_avg', sum(medians)/len(medians))
+        print('med_max', max(medians))
+        print('t_earliest', earliest)
+        print('t_latest', latest)
+        # input()
+
+        tdata = {}
+        csv_content = []
+        headers = [str(s) for s in sensors]
+        headers.insert(0, 'unix_time')
+        csv_content.append(','.join(headers)+',\n')
+
+        for t in timelogs:
+            if t[0]-earliest not in tdata:
+                tdata[t[0]-earliest] = []
+            tdata[t[0]-earliest].append((t[1], t[2]))
+
+        print(timelogs)
+
+        for t in range(0, latest-earliest+60):
+            x = ['' for x in headers]
+            x[0] = str(t)
+
+            # print('t = ', t, end='')
+
+            if t in tdata:
+                for it in tdata[t]:
+                    if it[1] == 1: # or it[1] == 0:
+                        idx = headers.index(str(it[0]))
+                        x[idx] = str(it[1])
+
+                    # print('adding', x)
+
+            csv_content.append(','.join(x)+',\n')
+
+        # print('done')
+
+        fs = open(f'dataset/MIT_{len(include_keys)}S.csv','w')
+        fs.writelines(csv_content)
+
+
+        ################ META
+
+
+        meta_headers = "sensor,records,elapsed,unix_oldest,unix_newest,oldest,newest,minimum,maximum,min2,max2,min3,max3,\n"
+
+        meta_line = "name,,,,,,,,,min,max,,,"
+        meta_content = [meta_headers]
+
+        for h in headers:
+            if "F" in h:
+                meta_content.append(
+                    meta_line.replace("name", h).replace("min", "0").replace("max", "1024")
+                    + "\n"
+                )
+            elif "S" in h:
+                meta_content.append(
+                    meta_line.replace("name", h).replace("min", "0").replace("max", "1") + "\n"
+                )
+            else:
+                meta_content.append(
+                    meta_line.replace("name", h).replace("min", "0").replace("max", "1") + "\n"
+                )
+
+        print(meta_content)
+
+        f = open(f'dataset/MIT_{len(include_keys)}S_meta.csv','w')
+        # f = open(f"meta_MIT{f_tagname}.csv", "w")
+        f.writelines(meta_content)
+
+
+        # print(csv_content)
+
+        # input()
+
+        # df = pd.DataFrame.from_dict(intervals_on)
+        # boxplot(df, 'On Only')
+
+        # df = pd.DataFrame.from_dict(intervals_off)
+        # boxplot(df, 'Off Only')
 
         # pp.pprint(included_data)
 
         # jstream_to_algodict(included_data)
 
         # pp.pprint(included_data)
+
+
+    if command[0] == "infprogj":
+        def inputDef(prompt, defval, casting):
+            x = input(prompt)
+            try:
+                return casting(x)
+            except:
+                return defval
+
+        print("infer progressive")
+
+        data = jstream_test('dataset online/MIT/subject1/activities_dict.json')
+
+        print('consult dataset online/MIT/subject1/activities_dict.json for parameters')
+        predict_activity = input('activity to predict: ')
+        activity_number = int(input('activity number: '))
+        # priories = int(input("first priories sequence (length): "))
+
+        pactivity = data[predict_activity][activity_number]
+
+        print(pactivity)
+        input()
+
+        # file_data = f"./dataset/{command[1]}"
+        # file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
+
+        # alldata = load_data(file_data, file_meta)
+
+        reset_potentials = True if input(
+            "reset potentials (y/n): ") == 'y' else False
+        
+        # first = int(input("first priories: "))
+        # last = int(input("last row in file (stream to): "))
+        pticks = inputDef("infer length after stream (def 20): ",
+                          eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 4): ",
+                           eng.network.params['InferRefractoryWindow'], int)
+        divergence = inputDef("divergence count (def 4): ",
+                              eng.network.params['InferDivergence'], int)
+
+        results = {}
+
+        pactivity_stream = {}
+
+        for entry in pactivity:
+            if entry[1] not in pactivity_stream:
+                pactivity_stream[entry[1]] = []
+            pactivity_stream[entry[1]].append(f'{entry[0]}~1-2')
+            if entry[2] not in pactivity_stream:
+                pactivity_stream[entry[2]] = []
+            pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
+
+        earliest = min(pactivity_stream.keys())
+        last = max(pactivity_stream.keys())
+        for i in range(last, last+60):
+            if i not in pactivity_stream:
+                pactivity_stream[i] = []
+
+        # dataCompare = {}
+
+        # for t in range(first, last):
+        #     data[t] = deepcopy(alldata[t])
+
+        # for t in range(first, last+pticks):
+        #     results[t] = deepcopy(alldata[t])
+
+        # del alldata
+
+        # priories = deepcopy(data)
+        pscores, datainputs, tick, rea, predictions, pdistinct  = npredict.infer_unfolding(deepcopy(eng), pactivity_stream, pticks, reset_potentials,
+                                                                          propagation_count=20, refractoryperiod=refract, divergence=divergence)
+
+        for t in range(last, last+pticks-2):
+            try:
+                sc = [p[1] for d in dataCompare[t]
+                      for p in predictions[t] if p[0] == d]
+                # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
+                print(t, dataCompare[t], sc, predictions[t])
+            except:
+                print('error (context lost), no t-entry at', t)
+
+        print("Accuracy")
+        # print("Accuracy")
+
+        print("Params")
+        pp.pprint(eng.network.params)
+
+        print("\nInputs")
+        pp.pprint(pactivity_stream)
+
+        print("\nPScores")
+        pp.pprint(pscores)
+
+        # print("\nInputs")
+        # pp.pprint(priories)
+
+        print("\nAccInputs")
+        pp.pprint(datainputs)
+
+        print("\nPredictions")
+        pp.pprint(predictions)
+
+        save = input("\nsave results in filename (nosave, leave empty): ")
+
+        if save != "":
+            jsondump("feedtraces2", f"{save}.json", {
+                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+
 
     if command[0] in ["tracepaths", "trace", "traces", "paths", "path"]:
         limits = float(command[1])
@@ -1232,8 +1567,8 @@ while True:
 
         print("infer unfold")
 
-        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
-        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
+        file_data = f"./dataset/old/dataset_{command[1]}_{command[2]}.csv"
+        file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
 
         alldata = load_data(file_data, file_meta)
 
@@ -1311,8 +1646,8 @@ while True:
 
         print("infer progressive")
 
-        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
-        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
+        file_data = f"./dataset/old/dataset_{command[1]}_{command[2]}.csv"
+        file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
 
         alldata = load_data(file_data, file_meta)
 
@@ -1322,9 +1657,9 @@ while True:
         last = int(input("last row in file (stream to): "))
         pticks = inputDef("infer length after stream (def 20): ",
                           eng.network.params['InferLength'], int)
-        refract = inputDef("infer-refractory period (def 2): ",
+        refract = inputDef("infer-refractory period (def 4): ",
                            eng.network.params['InferRefractoryWindow'], int)
-        divergence = inputDef("divergence count (def 3): ",
+        divergence = inputDef("divergence count (def 4): ",
                               eng.network.params['InferDivergence'], int)
 
         data = {}
@@ -1338,8 +1673,11 @@ while True:
 
         del alldata
 
+        pprint.pprint(data)
+        input()
+
         priories = deepcopy(data)
-        pscores, datainputs, tick, predictions = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
+        pscores, datainputs, tick, rea, predictions, pdistinct = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
                                                                           propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
         for t in range(last, last+pticks-2):
@@ -1691,6 +2029,9 @@ while True:
         print(f" memsize={eng.load_state('DSB2L2_S10F10_DW2')}")
         testcode = NSCL.Test.CompName()
         pp.pprint(NSCL.Test.primeProductWeights(testcode.name, eng))
+
+    if command[0] == 'nprofile':
+        compileneuronegraph(ticks=65, xres=5, yres=5)
 
     if command[0] == "exit":
         sys.exit(0)

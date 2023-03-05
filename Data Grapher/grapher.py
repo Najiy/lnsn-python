@@ -245,7 +245,7 @@ def smooth(x, y, num=500, capzero=True):
     return (X_, Y_)
 
 
-def compilenetmetagraph(fname="states/networks.meta", col="neurones", ylabel=None, filterout=[], xres=10, yres=4, reticky=False, smoothed=False, lblreplace=[], graphlabels=None):
+def compilenetmetagraph(fname="../states/networks.meta", col="neurones", ylabel=None, filterout=[], xres=10, yres=4, reticky=False, smoothed=False, lblreplace=[], graphlabels=None):
 
     network = {}
     cols = []
@@ -510,19 +510,19 @@ if not os.path.isdir("figures"):
 filtout = ["b2", "D2", "D3", "D4", "D5"]
 
 
-# compilenetmetagraph(col='neurones', ylabel='Neurosymbols Generated',
-#                     filterout=filtout, lblreplace=["D5", "D4"], graphlabels=["SINE", "SAW"])
-# compilenetmetagraph(col='composites', ylabel='Composites Generated', filterout=filtout, graphlabels=["SINE", "SAW"])
-# compilenetmetagraph(col='synapses', ylabel='Synapses Formed',
-#                     filterout=filtout,lblreplace=["D5", "D4"], graphlabels=["SINE", "SAW"])
-# compilenetmetagraph(col='npruned', ylabel='Acc. Prunes',
-#                     filterout=filtout, reticky=True, lblreplace=["D5", "D4"], graphlabels=["SINE", "SAW"])
+compilenetmetagraph(col='neurones', ylabel='Neurosymbols Generated',
+                    filterout=filtout, lblreplace=["D5", "D4"], graphlabels=["MIT_3S", "MIT_1S"])
+compilenetmetagraph(col='composites', ylabel='Composites Generated', filterout=filtout, graphlabels=["SINE", "SAW"])
+compilenetmetagraph(col='synapses', ylabel='Synapses Formed',
+                    filterout=filtout,lblreplace=["D5", "D4"], graphlabels=["SINE", "SAW"])
+compilenetmetagraph(col='npruned', ylabel='Acc. Prunes',
+                    filterout=filtout, reticky=True, lblreplace=["D5", "D4"], graphlabels=["SINE", "SAW"])
 
 
 
 # compilenetmetagraph(col='npruned', ylabel='Composites Pruned')
 # compilenetmetagraph(col='synapses', ylabel='Synapses Formed')
-compileneuronegraph(ticks=25, xres=5, yres=5)
+# compileneuronegraph(ticks=25, xres=5, yres=5)
 # dataset()
 # dataset_singly(yres=3)
 
