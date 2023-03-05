@@ -650,10 +650,10 @@ class NSCL:
                     f"  {s.name():^20}   wgt: {s.wgt}"
                 )
 
-        def get_actives(self, threshold=-1):
-            if threshold == -1:
+        def get_actives(self, threshold=-1.0):
+            if threshold == -1.0:
                 threshold = self.params()["BindingThreshold"]
             rperiod = self.params()["RefractoryPeriod"]
             neurones = [(x.name, x.potential) for x in self.network.neurones.values(
-            ) if x.potential >= threshold and x.refractory == rperiod]
+            ) if x.potential >= threshold]
             return neurones

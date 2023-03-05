@@ -20,11 +20,11 @@ def mergeDictionary(dict_1, dict_2):
     return dict_3
 
 class NSCLPredict:
-    def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2, accprevinp= []):
+    def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2, ctxacc= []):
 
         tick = min(list(datainputs.keys()))
 
-        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count, accprevinp=[], reap=([], [], [], [])):
+        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count, ctxacc=[], reap=([], [], [], [])):
 
             # propagate & capture
             # times = list(datainputs.keys())
@@ -47,7 +47,7 @@ class NSCLPredict:
                         templist.append(
                             (t, i, eng.network.neurones[i].potential))
                 # print(f'processing all, at {t}')
-                accprevinp = deepcopy(datainputs[t])
+                # ctxacc = deepcopy(datainputs[t])
                 tick += 1
                 print()
 
@@ -81,9 +81,9 @@ class NSCLPredict:
                         except:
                             continue
 
-            return pscores, datainputs, tick, (r, e, a)
+            return pscores, datainputs, ctxacc, tick, (r, e, a)
 
-        def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001, reap=([], [], [], [])):
+        def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001,ctxacc= [], reap=([], [], [], [])):
 
             times = list(datainputs.keys())
             times.sort()
@@ -194,15 +194,16 @@ class NSCLPredict:
 
         predictions = {}
 
-        pscores, datainputs, tick, reap = feed_all(
-            datainputs, pscores={}, propagation_count=propagation_count)
+        pscores, datainputs, tick, ctxacc, reap = feed_all(
+            datainputs, pscores={}, propagation_count=propagation_count,ctxacc=ctxacc)
         # pp.pprint(datainputs)
         # pp.pprint(pscores)
 
         for i in range(len(datainputs), pticks):
             try:
                 _pscores, _datainputs, _tick, _reap, _predictions = feed_once(
-                    datainputs, tick, pscores, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, predictions=predictions, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'])
+                    datainputs, tick, pscores, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, predictions=predictions, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'],
+                    ctxacc=ctxacc)
                 pscores, datainputs, tick, reap,  predictions = (
                     _pscores, _datainputs, _tick, _reap, _predictions)
             except:
@@ -241,7 +242,11 @@ class NSCLPredict:
                 else:
                     pdistinct[t][pk] += pscores[t][k]
 
-        return pscores, datainputs, tick, reap, predictions, pdistinct
+        to_remove = [x for x in datainputs if datainputs[x] == []]
+        for r in to_remove:
+            del datainputs[r]
+
+        return pscores, datainputs, tick, reap, predictions, pdistinct, ctxacc, eng
 
     def save_predictions(fname, content):
 

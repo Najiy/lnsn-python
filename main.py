@@ -1449,8 +1449,10 @@ while True:
 
         pactivity = data[predict_activity][activity_number]
 
-        print(pactivity)
-        input()
+
+        # print(pactivity)
+        # input()
+
 
         # file_data = f"./dataset/{command[1]}"
         # file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
@@ -1477,9 +1479,9 @@ while True:
             if entry[1] not in pactivity_stream:
                 pactivity_stream[entry[1]] = []
             pactivity_stream[entry[1]].append(f'{entry[0]}~1-2')
-            if entry[2] not in pactivity_stream:
-                pactivity_stream[entry[2]] = []
-            pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
+            # if entry[2] not in pactivity_stream:
+            #     pactivity_stream[entry[2]] = []
+            # pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
 
         earliest = min(pactivity_stream.keys())
         last = max(pactivity_stream.keys())
@@ -1498,8 +1500,13 @@ while True:
         # del alldata
 
         # priories = deepcopy(data)
-        pscores, datainputs, tick, rea, predictions, pdistinct  = npredict.infer_unfolding(deepcopy(eng), pactivity_stream, pticks, reset_potentials,
+
+        # for i in len()
+
+        pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng  = npredict.infer_unfolding(eng, pactivity_stream, pticks, reset_potentials,
                                                                           propagation_count=20, refractoryperiod=refract, divergence=divergence)
+
+        # eng = neweng
 
         for t in range(last, last+pticks-2):
             try:
@@ -1516,8 +1523,8 @@ while True:
         print("Params")
         pp.pprint(eng.network.params)
 
-        print("\nInputs")
-        pp.pprint(pactivity_stream)
+        # print("\nInputs")
+        # pp.pprint(pactivity_stream)
 
         print("\nPScores")
         pp.pprint(pscores)
@@ -1528,8 +1535,8 @@ while True:
         print("\nAccInputs")
         pp.pprint(datainputs)
 
-        print("\nPredictions")
-        pp.pprint(predictions)
+        # print("\nPredictions")
+        # pp.pprint(predictions)
 
         save = input("\nsave results in filename (nosave, leave empty): ")
 
@@ -1547,7 +1554,11 @@ while True:
 
     if command[0] == "active":
         active = eng.get_actives()
-        print(active)
+        pp.pprint(active)
+
+    if command[0] == "thresholds":
+        active = eng.get_actives(float(command[1]))
+        pp.pprint(active)
 
     if command[0] == "backtrace":
         propslvl = eng.network.params["PropagationLevels"]  # float(command[1])
