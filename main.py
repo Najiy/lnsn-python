@@ -348,7 +348,7 @@ def compileneuronegraph(fname="defparams.json", ticks=15, xres=8, yres=4):
 
     fig, axs = plt.subplots(1, 1)
 
-    def neurone_profile(fname="defparams.json", start=0.30, ticks=15):
+    def neurone_profile(fname="defparams.json", start=0.30, ticks=ticks):
         with open(fname) as jsonfile:
             defparams = json.loads("\n".join(jsonfile.readlines()))
             start = defparams["FiringThreshold"] + 0.02
@@ -437,11 +437,13 @@ def compileneuronegraph(fname="defparams.json", ticks=15, xres=8, yres=4):
     xcoords = [x for x in range(-2, ticks)]
     active = [x-4 for x in xcoords if nprof_y[x]
               >= defparams["BindingThreshold"]]
+    
     # print(nprof_x)
-    print(nprof_y)
+    # print(nprof_y)
     # print(active)
     # active.pop()
-    input(active)
+    print('active interval', len(active))
+    input()
     inactive = [x for x in xcoords if x not in active]
 
     for xc in active:
@@ -2225,7 +2227,7 @@ while True:
         pp.pprint(NSCL.Test.primeProductWeights(testcode.name, eng))
 
     if command[0] == 'nprofile':
-        compileneuronegraph(ticks=65, xres=5, yres=5)
+        compileneuronegraph(ticks=int(command[1]), xres=5, yres=5)
 
     if command[0] == "exit":
         sys.exit(0)

@@ -10,7 +10,7 @@
 
     "FiringThreshold": 0.25,
     "ZeroingThreshold": 0.05,
-    "DecayFactor": 0.995,
+    "DecayFactor": 0.95,
     "InitialPotential": 0.2,
     "ReinforcementRate": 0.3,
     "RefractoryPeriod": 7,
