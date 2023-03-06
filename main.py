@@ -1253,7 +1253,7 @@ while True:
         csvstream(command[1], command[2], False, command[3], epoch)
 
     if command[0] == "jstream_test":
-        data = jstream_test('dataset online/MIT/subject1/activities_dict.json')
+        data = jstream_test('activities_dict.json')
         keys = data.keys()
 
         input(data)
@@ -1440,9 +1440,9 @@ while True:
 
         print("infer progressive")
 
-        data = jstream_test('dataset online/MIT/subject1/activities_dict.json')
+        data = jstream_test('activities_dict.json')
 
-        print('consult dataset online/MIT/subject1/activities_dict.json for parameters')
+        print('see activities_dict.json for parameters')
         predict_activity = input('activity to predict: ')
         # activity_number = int(input('activity number: '))
         # priories = int(input("first priories sequence (length): "))
