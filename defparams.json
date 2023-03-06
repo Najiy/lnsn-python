@@ -24,7 +24,7 @@
     "TraceLength": 60,
     "InferDivergence": 4,
     "InferRefractoryWindow": 4,
-    "InferLength": 20,
+    "InferLength": 200,
     "InferRefractoryCoefficient": 0,
     "InferRefractoryInputThreshold": 0
 }
