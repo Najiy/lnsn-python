@@ -47,7 +47,6 @@ class NSCLPredict:
                         templist.append(
                             (t, i, eng.network.neurones[i].potential))
                 # print(f'processing all, at {t}')
-                # ctxacc = deepcopy(datainputs[t])
                 tick += 1
                 print()
 
@@ -181,13 +180,15 @@ class NSCLPredict:
 
             pscorewindowunfied.sort(key=lambda x: x[1], reverse=True)
             pscorewindowunfied = pscorewindowunfied[:divergence]
-            datainputs[max(ptimes)] = [
-                x[0] for x in pscorewindowunfied if x[1] > refractory_input_threshold]
+            # print('pscorewindow', pscorewindow)
+            # print('pscoreunified', pscorewindowunfied)
+            # print('ptimes', ptimes)
+            datainputs[max(ptimes)] = [x[0] for x in pscorewindowunfied if x[1] > refractory_input_threshold]
             predictions[max(ptimes)] = deepcopy(pscorewindowunfied)
 
             tick += 1
 
-            return pscores, datainputs, tick, (r, e, a), predictions
+            return pscores, datainputs, tick, predictions
 
         if reset_potentials:
             eng.reset_potentials()
@@ -201,11 +202,10 @@ class NSCLPredict:
 
         for i in range(len(datainputs), pticks):
             try:
-                _pscores, _datainputs, _tick, _reap, _predictions = feed_once(
-                    datainputs, tick, pscores, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, predictions=predictions, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'],
-                    ctxacc=ctxacc)
-                pscores, datainputs, tick, reap,  predictions = (
-                    _pscores, _datainputs, _tick, _reap, _predictions)
+                _pscores, _datainputs, _tick, _predictions = feed_once(
+                    datainputs, tick, pscores, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, predictions=predictions, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'])
+                pscores, datainputs, tick, predictions = (
+                    _pscores, _datainputs, _tick, _predictions)
             except:
                 break
 
@@ -247,6 +247,71 @@ class NSCLPredict:
             del datainputs[r]
 
         return pscores, datainputs, tick, reap, predictions, pdistinct, ctxacc, eng
+
+    def feed_forward_progressive(eng, datainputs, reset_potentials=True, propagation_count=20, divergence=3, refractory_period=2):
+
+        tick = min(list(datainputs.keys()))
+
+        def feed_all(datainputs, tick=tick, pscores={}, propagation_count=propagation_count):
+            # propagate & capture
+            # times = list(datainputs.keys())
+            # times.sort()
+            templist = []
+
+            for t in datainputs:
+                if len(datainputs[t]) == 0:
+                    r, e, a = eng.algo([])
+                    for i in a:
+                        templist.append(
+                            (t, i, eng.network.neurones[i].potential))
+                else:
+                    r, e, a = eng.algo(datainputs[t])
+                    for i in a:
+                        templist.append(
+                            (t, i, eng.network.neurones[i].potential))
+                # print(f'processing all, at {t}')
+                tick += 1
+
+            for t in range(propagation_count):
+                r, e, a = eng.algo([])
+                for i in a:
+                    templist.append(
+                        (tick, i, eng.network.neurones[i].potential))
+
+            # collect pscores
+            for i in templist:
+                if 'CMP' not in i[1]:
+                    if i[0] not in pscores:
+                        pscores[i[0]] = {}
+                    if i[1] not in pscores[i[0]]:
+                        pscores[i[0]][i[1]] = round(i[2], 4)
+                    else:
+                        pscores[i[0]][i[1]] += round(i[2], 4)
+                else:
+                    s = NSCLPredict.primeProductWeights(i[1], eng)
+                    stotal = i[2]
+
+                    for j in s:
+                        try:
+                            if s[j][1]+i[0] not in pscores:
+                                pscores[s[j][1] + i[0]] = {}
+                            if j not in pscores[s[j][1]+i[0]]:
+                                pscores[s[j][1]+i[0]][j] = s[j][0] * stotal
+                            else:
+                                pscores[s[j][1]+i[0]][j] += s[j][0] * stotal
+                        except:
+                            continue
+
+            return pscores, datainputs, tick
+
+        if reset_potentials:
+            eng.reset_potentials()
+
+        predictions = {}
+        pscores, datainputs, tick = feed_all(
+            datainputs, pscores={}, propagation_count=propagation_count)
+
+        return pscores, datainputs, tick, predictions
 
     def save_predictions(fname, content):
 
