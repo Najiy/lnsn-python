@@ -1,11 +1,13 @@
 check predictions for (Doing laundry):
-    MIT_1S_ON_1050
-    MIT_1S_ON_2100
-    MIT_1S_ON_2100_B2P3
-    MIT_1S_ON_2100_B3P3
-    MIT_1S_ON_2100_B3P4
-    MIT_1S_ON_2100_B2P4
-    MIT_1S_ON_2100_B3P4
-    MIT_1S_ON_2100_B4P4
+    0.999
+        MIT_1S_ON_1050
+    0.9995
+        MIT_1S_ON_2100
+        MIT_1S_ON_2100_B2P3
+        MIT_1S_ON_2100_B3P3
+        MIT_1S_ON_2100_B3P4
+        MIT_1S_ON_2100_B2P4
+        MIT_1S_ON_2100_B3P4
+        MIT_1S_ON_2100_B4P4
 
 make sure to adjust BindingCount and PropagationLevels!!
