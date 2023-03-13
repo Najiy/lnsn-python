@@ -1,0 +1,93 @@
+{
+    "neurones": [
+        {
+            "name": "100~1-2",
+            "meta": {},
+            "potential": 1.0,
+            "fsynapses": [
+                "CMP(100~1-2,106~1-2)"
+            ],
+            "rsynapses": [],
+            "lastspike": 0,
+            "refractory": 7,
+            "occurs": 3,
+            "level": 0,
+            "probationary": -1
+        },
+        {
+            "name": "106~1-2",
+            "meta": {},
+            "potential": 1.0,
+            "fsynapses": [
+                "CMP(100~1-2,106~1-2)"
+            ],
+            "rsynapses": [],
+            "lastspike": 0,
+            "refractory": 7,
+            "occurs": 3,
+            "level": 0,
+            "probationary": -1
+        },
+        {
+            "name": "CMP(100~1-2,106~1-2)",
+            "meta": {},
+            "potential": 0.2,
+            "fsynapses": [],
+            "rsynapses": [
+                "100~1-2",
+                "106~1-2"
+            ],
+            "lastspike": 0,
+            "refractory": 0,
+            "occurs": 1,
+            "level": 1,
+            "probationary": 2419200
+        }
+    ],
+    "synapses": [
+        {
+            "fref": "CMP(100~1-2,106~1-2)",
+            "rref": "100~1-2",
+            "wgt": 0.01,
+            "occurs": 0,
+            "lastspike": ""
+        },
+        {
+            "fref": "CMP(100~1-2,106~1-2)",
+            "rref": "106~1-2",
+            "wgt": 0.01,
+            "occurs": 0,
+            "lastspike": ""
+        }
+    ],
+    "npruned": [],
+    "spruned": [],
+    "params": {
+        "BindingCount": 3,
+        "PropagationLevels": 3,
+        "PruneInterval": 2419200,
+        "PruningThreshold": 0.2,
+        "BindingThreshold": 0.35,
+        "DownPotentialFactor": 0.2,
+        "ComposeByPotentialFirst": true,
+        "ComposeByCompositeFirst": false,
+        "FiringThreshold": 0.25,
+        "ZeroingThreshold": 0.05,
+        "DecayFactor": 0.8,
+        "InitialPotential": 0.2,
+        "ReinforcementRate": 0.3,
+        "RefractoryPeriod": 7,
+        "MaxRecurrent": 9,
+        "PostSpikeFactor": 1.0,
+        "DefaultEncoderCeiling": 1024,
+        "DefaultEncoderFloor": 0,
+        "DefaultEncoderResolution": 1,
+        "TraceLength": 60,
+        "InferDivergence": 4,
+        "InferRefractoryWindow": 4,
+        "InferLength": 200,
+        "InferRefractoryCoefficient": 0,
+        "InferRefractoryInputThreshold": 0
+    },
+    "tick": 1
+}

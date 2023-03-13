@@ -5,6 +5,7 @@
 # from genericpath import getsize
 # from inspect import trace
 
+from decimal import DivisionByZero
 from heapq import merge
 from pickle import NONE
 from nscl_algo import NSCLAlgo
@@ -241,6 +242,25 @@ class NSCL:
 
         def params(self) -> object:
             return self.network.params
+        
+        def encoded_neu_name(self, name, value):
+            def normaliser(data, minn, maxx, scaling=1):
+                try:
+                    return (data - minn) / (maxx - minn) * scaling
+                except DivisionByZero:
+                    return 0
+                
+            if name in self.meta:
+                maxx = self.meta[name]["max"]
+                minn = self.meta[name]["min"]
+                res = self.meta[name]["res"]
+
+                print(type(value))
+
+                newval = math.floor(normaliser(value, minn, maxx, res))
+                return f"{name}~{newval}-{newval+1}"
+            
+            raise Exception(f'{name} not in eng.meta list')
 
         def clear_traces(self) -> None:
             self.traces = []

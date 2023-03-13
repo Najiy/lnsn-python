@@ -80,6 +80,14 @@ class NSCLPredict:
                         except:
                             continue
 
+        
+
+            # high = max(pscores.keys())
+            # pscores = {high:pscores[high]}
+
+            # pp.pprint(pscores)
+            # input()
+
             return pscores, datainputs, ctxacc, tick, (r, e, a)
 
         def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001,ctxacc= [], reap=([], [], [], [])):
@@ -523,7 +531,9 @@ class NSCLPredict:
     def primeProductWeights(name, eng, ratio=True):
         traceWeights, traceLevels = NSCLPredict.traceProductWeights(name, eng)
         primeProducts = [(x.split('->')[0], NSCLPredict.myprod(traceWeights[x]), traceLevels[x])
-                         for x in traceWeights if 'CMP' not in x.split('->')[0]]
+                         for x in traceWeights if 'CMP' not in x.split('->')[0] 
+                        #  and eng.network.neurones[x.split('->')[1]].refractory > 0
+                         ]
         result = {}
 
         sumv = 0

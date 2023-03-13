@@ -1262,8 +1262,8 @@ while True:
 
         include_keys = [
             'Doing laundry',
-            # 'Watching TV',
-            # 'Preparing breakfast',
+            'Watching TV',
+            'Preparing breakfast',
         ]
 
         # include_keys = [x for x in data.keys()]
@@ -1352,9 +1352,11 @@ while True:
 
         tdata = {}
         csv_content = []
+        csv_content_unpadded = []
         headers = [str(s) for s in sensors]
         headers.insert(0, 'unix_time')
         csv_content.append(','.join(headers)+',\n')
+        csv_content_unpadded.append(','.join(headers)+',\n')
 
         for t in timelogs:
             if t[0]-earliest not in tdata:
@@ -1368,22 +1370,28 @@ while True:
             x[0] = str(t)
 
             # print('t = ', t, end='')
-
+            
+            skip = True
             if t in tdata:
                 for it in tdata[t]:
                     if it[1] == 1: # or it[1] == 0:
                         idx = headers.index(str(it[0]))
                         x[idx] = str(it[1])
+                        skip = False
 
                     # print('adding', x)
-
             csv_content.append(','.join(x)+',\n')
+            if not skip:
+                csv_content_unpadded.append(','.join(x)+',\n')
 
         # print('done')
 
         fs = open(f'dataset/MIT_{len(include_keys)}S.csv','w')
         fs.writelines(csv_content)
-
+        fs.close()
+        fs = open(f'dataset/MIT_{len(include_keys)}S_UPADDED.csv','w')
+        fs.writelines(csv_content_unpadded)
+        fs.close()
 
         ################ META
 
@@ -1431,7 +1439,6 @@ while True:
 
         # pp.pprint(included_data)
 
-
     if command[0] == "infprogj":
         def inputDef(prompt, defval, casting):
             x = input(prompt)
@@ -1444,14 +1451,25 @@ while True:
 
         data = jstream_test('activities_dict.json')
 
-        print('see activities_dict.json for parameters')
-        predict_activity = input('activity to predict: ')
+        # print('see activities_dict.json for parameters')
+        # predict_activity = input('activity to predict: ')
         # activity_number = int(input('activity number: '))
         # priories = int(input("first priories sequence (length): "))
 
-        # pactivity = data[predict_activity][activity_number]
-        pactivity = [item for sublist in data[predict_activity] for item in sublist] 
 
+        include_keys = [
+            'Doing laundry',
+            # 'Watching TV',
+            # 'Preparing breakfast',
+        ]
+
+        # pactivity = data[predict_activity][activity_number]
+        pactivity = []
+        for activity in include_keys:
+            pactivity.extend([item for sublist in data[activity] for item in sublist])
+
+        # pp.pprint(pactivity)
+        # input()
 
         # print(pactivity)
         # input()
@@ -1486,11 +1504,26 @@ while True:
             #     pactivity_stream[entry[2]] = []
             # pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
 
+        def unpad(act_stream):
+            result = {}
+            keys = [x for x in act_stream.keys()]
+            keys.sort()
+            for i in range(0,len(keys)):
+                result[i] = act_stream[keys[i]]
+            return result
+        
+
+
+        pactivity_stream = unpad(pactivity_stream)
+        pp.pprint(pactivity_stream)
+        input()
+
         earliest = min(pactivity_stream.keys())
         last = max(pactivity_stream.keys())
         for i in range(last, last+60):
             if i not in pactivity_stream:
                 pactivity_stream[i] = []
+
 
         # dataCompare = {}
 
@@ -1543,6 +1576,7 @@ while True:
 
             # print("\nInputs")
             # pp.pprint(pactivity_stream)
+            clear()
 
             print('####################### START ##########################')
             print(earliest,rindex ,last, '---',earliest-earliest,rindex-earliest ,last-earliest)
@@ -1571,26 +1605,28 @@ while True:
                     if key not in pdata:
                         predictions[key] += sett[key]
 
-            if False:
-                print("\nAccInputs")
-                pp.pprint(data)
+            if True:
+                # print("\nAccInputs")
+                # pp.pprint(data)
 
-                print('\nWPScores')
-                pp.pprint(pred)
+                # print('\nWPScores')
+                # pp.pprint(pred)
 
-                if len(accinputs.values()) != 0:
-                    print('\nWPrevAccInputs')
-                    pp.pprint(list(accinputs.values())[-1])
+                # if len(accinputs.values()) != 0:
+                #     print('\nWPrevAccInputs')
+                #     pp.pprint(list(accinputs.values())[-1])
 
                 if len(accpredictions.values()) != 0:
                     print('\nPrevPredictions')
                     pp.pprint(list(accpredictions.values())[-1])
 
                 print('\nWAccInputs')
-                pp.pprint(pdata)
+                pp.pprint(pdata[-1])
         
-                print("\nPredictions")
-                pp.pprint(predictions)
+                # print("\nPredictions")
+                # pp.pprint(predictions)
+
+                input()
 
 
             if len(predictions.keys()) != 0:
@@ -1628,6 +1664,260 @@ while True:
             print(counts)
 
             print('####################### END ##########################')
+            # input()
+
+        input()
+        
+        # save = input("\nsave results in filename (nosave, leave empty): ")
+
+        # if save != "":
+        #     jsondump("feedtraces2", f"{save}.json", {
+        #              "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+
+    if command[0] == "infprogs":
+        def inputDef(prompt, defval, casting):
+            x = input(prompt)
+            if x == '':
+                return defval
+            try:
+                return casting(x)
+            except:
+                return defval
+
+        print("infer progressive")
+
+        file = inputDef("data to load","./dataset/old/dataset_saw_S10F10.csv", str)
+        metafile = inputDef("meta to load","./dataset/old/meta_saw_S10F10.csv", str)
+    
+        pactivity_stream = {}
+
+        metafile = open(metafile, "r")
+        metadata = metafile.readlines()[1:]
+
+        for line in metadata:
+
+            row = line.split(",")
+            # print(row)
+            eng.meta[row[0]] = {
+                "min": float(row[9]),
+                "max": float(row[10]),
+                "res": float(eng.network.params["DefaultEncoderResolution"]),
+            }
+
+        fs = open(file, 'r')
+        data = fs.readlines()
+        data = [x.replace('\n','') for x in data]
+        header = data[0].split(',')
+
+        for line in data[1:]:
+            entry = line.split(',')
+            pactivity_stream[int(entry[0])] = []
+            for idx, value in enumerate(entry):
+                if value != '' and idx != 0:
+                    sensor = header[idx]
+                    name = eng.encoded_neu_name(sensor, int(value))
+                    # input(name)
+                    pactivity_stream[int(entry[0])].append(name)
+            # input(pactivity_stream)
+
+        # pp.pprint(pactivity_stream)
+        # input()
+
+        reset_potentials = True if input(
+            "reset potentials (y/n): ") == 'y' else False
+        
+        # first = int(input("first priories: "))
+        # last = int(input("last row in file (stream to): "))
+        pticks = inputDef("infer length after stream (def 20): ",
+                          eng.network.params['InferLength'], int)
+        refract = inputDef("infer-refractory period (def 4): ",
+                           eng.network.params['InferRefractoryWindow'], int)
+        divergence = inputDef("divergence count (def 4): ",
+                              eng.network.params['InferDivergence'], int)
+
+        results = {}
+
+        # pactivity_stream = {}
+
+        # for entry in pactivity:
+        #     if entry[1] not in pactivity_stream:
+        #         pactivity_stream[entry[1]] = []
+        #     pactivity_stream[entry[1]].append(f'{entry[0]}~1-2')
+            # if entry[2] not in pactivity_stream:
+            #     pactivity_stream[entry[2]] = []
+            # pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
+
+        def unpad(act_stream):
+            result = {}
+            keys = [x for x in act_stream.keys()]
+            keys.sort()
+            for i in range(0,len(keys)):
+                result[i] = act_stream[keys[i]]
+            return result
+        
+
+
+        # pactivity_stream = unpad(pactivity_stream)
+        pp.pprint(pactivity_stream)
+        input()
+
+        earliest = min(pactivity_stream.keys())
+        last = max(pactivity_stream.keys())
+        for i in range(last, last+60):
+            if i not in pactivity_stream:
+                pactivity_stream[i] = []
+
+
+        # dataCompare = {}
+
+        # for t in range(first, last):
+        #     data[t] = deepcopy(alldata[t])
+
+        # for t in range(first, last+pticks):
+        #     results[t] = deepcopy(alldata[t])
+
+        # del alldata
+
+        # priories = deepcopy(data)
+
+        # for i in len()
+        # print(last)
+        # pp.pprint(pactivity_stream)
+        # input()
+
+        pact_stream = list(pactivity_stream.items())
+        # input(pact_stream)
+        pact_stream.sort(key=lambda x: x[0])
+
+        accpredictions = {}
+        accinputs = {}
+
+        counts = [0,0,0,0] # count, top prediction, ctx prediction, out of context
+
+        for rindex in range(earliest+1,last+1):
+            # data = dict(itertools.islice(pactivity_stream.items(), rindex))
+            # print(pact_stream)
+            # j = pact_stream[earliest-earliest: rindex-earliest]
+            # print(j)
+            data = {}
+
+            for i in range(earliest, rindex):
+                if i in pactivity_stream and pactivity_stream[i] != []:
+                    data[i] = pactivity_stream[i]
+
+            pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng  = npredict.infer_unfolding(eng, data, pticks, reset_potentials,
+                                                                            propagation_count=20, refractoryperiod=refract, divergence=divergence)
+
+            high = max(pscores.keys())
+            pscores = {high:pscores[high]}
+            # eng = neweng
+
+            # print("Accuracy")
+            # print("Accuracy")
+
+
+            # print("Params")
+            # pp.pprint(eng.network.params)
+
+            # print("\nInputs")
+            # pp.pprint(pactivity_stream)
+            clear()
+
+            print('####################### START ##########################')
+            print(earliest,rindex ,last, '---',earliest-earliest,rindex-earliest ,last-earliest)
+
+
+         
+        
+            # print("\nPScores")
+            # pp.pprint(pscores)
+
+            predictions = {}
+            # pscores = list(pscores.items())
+
+
+            pdata = [x for x in list(data.items()) if x[0] >= rindex -200]
+            pdata = [j for sub in [x[1] for x in pdata] for j in sub]
+            
+     
+
+            # pred = [x for x in list(pscores.items()) if x[0] >= rindex -200 and x[0] <= rindex+200]
+            pred =  [pscores[tt] for tt in [t for t in pscores if t >= rindex -200 and t <= rindex+200] if tt in pscores]
+            for sett in pred:
+                for key in sett.keys():
+                    if key not in predictions and key not in pdata:
+                        predictions[key] = 0.0
+                    if key not in pdata:
+                        predictions[key] += sett[key]
+
+            if True:
+                # print("\nAccInputs")
+                # pp.pprint(data)
+
+                # print('\nWPScores')
+                # pp.pprint(pred)
+
+                # if len(accinputs.values()) != 0:
+                #     print('\nWPrevAccInputs')
+                #     pp.pprint(list(accinputs.values())[-1])
+
+                pp.pprint(pscores)
+
+                if len(accpredictions.values()) != 0:
+                    print('\nPrevPredictions')
+                    pp.pprint(list(accpredictions.values())[-1])
+
+                print('\nWAccInputs')
+                pp.pprint(pdata[-1])
+
+                # potentials = [(x,eng.network.neurones[x].potential) for x in pdata]
+
+                # print('\Potentials')
+                # pp.pprint(potentials)
+                print("\nPredictions")
+                pp.pprint(predictions)
+
+                # input()
+
+
+            if len(predictions.keys()) != 0:
+                accpredictions[rindex] = predictions
+            else:
+                accpredictions[rindex] = {}
+
+            if len(pdata) != 0:
+                accinputs[rindex] = pdata
+
+            if len(accinputs.values()) >= 2:
+                if str(list(accinputs.values())[-2]) != str(list(accinputs.values())[-1]):
+                    counts[0] += 1
+
+                    last_input = list(accinputs.values())[-1][-1]
+                    prev_predictions = {}
+                    highest_value = ''
+  
+                    try:
+                        prev_predictions = list(accpredictions.values())[-2]
+                        highest_value = max(prev_predictions, key=prev_predictions.get)
+                        # print(last_input)
+                        # print(list(list(accpredictions.values())[-2].keys()))
+                        # print(last_input in list(list(accpredictions.values())[-2].keys()))
+                    except:
+                        pass
+
+                    if last_input == highest_value:
+                        counts[1] += 1
+                    elif last_input in list(prev_predictions.keys()):
+                        counts[2] += 1
+                    else:
+                        counts[3] += 1
+
+                    # print(counts)
+                    # input()
+            print(counts)
+
+            print('####################### END ##########################')
+            input()
 
         input()
         
@@ -2181,6 +2471,10 @@ while True:
 
     if command[0] == "memsize":
         print(f" memsize={eng.size_stat()}")
+        # print(eng.size_stat())
+
+    if command[0] == "metalist":
+        print(f" metalist={eng.meta}")
         # print(eng.size_stat())
 
     if command[0] == "avg_wgt_r":
