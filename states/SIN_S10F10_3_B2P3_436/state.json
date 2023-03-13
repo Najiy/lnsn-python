@@ -29828,7 +29828,7 @@
         "InitialPotential": 0.2,
         "ReinforcementRate": 0.3,
         "RefractoryPeriod": 7,
-        "MaxRecurrent": 9,
+        "MaxRecurrent": 1,
         "PostSpikeFactor": 1.0,
         "DefaultEncoderCeiling": 1024,
         "DefaultEncoderFloor": 0,

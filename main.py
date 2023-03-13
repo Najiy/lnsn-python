@@ -9,6 +9,7 @@ from genericpath import exists
 from tokenize import Number
 from tracemalloc import start
 import typing
+from collections import Counter
 
 from curses import meta
 from datetime import date, datetime
@@ -1686,8 +1687,8 @@ while True:
 
         print("infer progressive")
 
-        file = inputDef("data to load","./dataset/old/dataset_saw_S10F10.csv", str)
-        metafile = inputDef("meta to load","./dataset/old/meta_saw_S10F10.csv", str)
+        file = inputDef("data to load","./dataset/old/dataset_sin_S10F10.csv", str)
+        metafile = inputDef("meta to load","./dataset/old/meta_sin_S10F10.csv", str)
     
         pactivity_stream = {}
 
@@ -1808,8 +1809,7 @@ while True:
             pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng  = npredict.infer_unfolding(eng, data, pticks, reset_potentials,
                                                                             propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
-            high = max(pscores.keys())
-            pscores = {high:pscores[high]}
+            
             # eng = neweng
 
             # print("Accuracy")
@@ -1831,8 +1831,10 @@ while True:
         
             # print("\nPScores")
             # pp.pprint(pscores)
-
-            predictions = {}
+            high = max(pscores.keys())
+            # predictions
+            # predictions = {high:Counter(pscores[high])+ Counter(pscores[high-1])}
+            predictions = {high:pscores[high]}
             # pscores = list(pscores.items())
 
 
@@ -1840,15 +1842,14 @@ while True:
             pdata = [j for sub in [x[1] for x in pdata] for j in sub]
             
      
-
             # pred = [x for x in list(pscores.items()) if x[0] >= rindex -200 and x[0] <= rindex+200]
-            pred =  [pscores[tt] for tt in [t for t in pscores if t >= rindex -200 and t <= rindex+200] if tt in pscores]
-            for sett in pred:
-                for key in sett.keys():
-                    if key not in predictions and key not in pdata:
-                        predictions[key] = 0.0
-                    if key not in pdata:
-                        predictions[key] += sett[key]
+            # pred =  [pscores[tt] for tt in [t for t in pscores if t >= rindex -200 and t <= rindex+200] if tt in pscores]
+            # for sett in pred:
+            #     for key in sett.keys():
+            #         if key not in predictions and key not in pdata:
+            #             predictions[key] = 0.0
+            #         if key not in pdata:
+            #             predictions[key] += sett[key]
 
             if True:
                 # print("\nAccInputs")
@@ -1861,7 +1862,8 @@ while True:
                 #     print('\nWPrevAccInputs')
                 #     pp.pprint(list(accinputs.values())[-1])
 
-                pp.pprint(pscores)
+                # print("\nPscores")
+                # pp.pprint(pscores)
 
                 if len(accpredictions.values()) != 0:
                     print('\nPrevPredictions')
@@ -1880,10 +1882,9 @@ while True:
                 # input()
 
 
+            accpredictions[rindex] = {}
             if len(predictions.keys()) != 0:
                 accpredictions[rindex] = predictions
-            else:
-                accpredictions[rindex] = {}
 
             if len(pdata) != 0:
                 accinputs[rindex] = pdata
@@ -1892,32 +1893,29 @@ while True:
                 if str(list(accinputs.values())[-2]) != str(list(accinputs.values())[-1]):
                     counts[0] += 1
 
-                    last_input = list(accinputs.values())[-1][-1]
-                    prev_predictions = {}
-                    highest_value = ''
-  
+                    prev_pscore = list(accpredictions.values())[-2]
+                    inp = pdata[-1]
+                    inp_prevv = pdata[-2]
+                    t = [x for x in prev_pscore.keys()][0]
+                    prev_pscore = prev_pscore[t]
+
+                    if inp in prev_pscore:
+                        counts[2] += 1
+
                     try:
-                        prev_predictions = list(accpredictions.values())[-2]
-                        highest_value = max(prev_predictions, key=prev_predictions.get)
-                        # print(last_input)
-                        # print(list(list(accpredictions.values())[-2].keys()))
-                        # print(last_input in list(list(accpredictions.values())[-2].keys()))
+                        prev_pscore.pop(inp_prevv)
+                        highest_value = max(prev_pscore, key=prev_pscore.get)
+                        if inp == highest_value:
+                            counts[1]+=1
                     except:
                         pass
 
-                    if last_input == highest_value:
-                        counts[1] += 1
-                    elif last_input in list(prev_predictions.keys()):
-                        counts[2] += 1
-                    else:
-                        counts[3] += 1
 
-                    # print(counts)
-                    # input()
+            print()
             print(counts)
 
             print('####################### END ##########################')
-            input()
+            # input()
 
         input()
         
