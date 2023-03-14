@@ -20,6 +20,139 @@ def mergeDictionary(dict_1, dict_2):
     return dict_3
 
 class NSCLPredict:
+
+    def infer_once_unfolding(eng, datainput, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2):
+
+        # tick = min(list(datainput.keys()))
+
+        def feed_once(datainput, tick, propagation_count=propagation_count, divergence=1, refractoryperiod=2, refractory_coeff=0.0001, refractory_input_threshold=0.0001, reap=([], [], [], [])):
+
+            times = list(datainput.keys())
+            times.sort()
+            templist = []
+
+            r, e, a, p = reap
+            print('##', datainput[0])
+
+            r, e, a, p = eng.algo(datainput[0], p)
+            for i in a:
+                templist.append(
+                    (tick, i, eng.network.neurones[i].potential))
+
+            # print(f'processing once, at {tick}')
+            # tick += 1
+
+            for t in range(propagation_count):
+                r, e, a, p = eng.algo([], p)
+                for i in a:
+                    templist.append(
+                        (tick, i, eng.network.neurones[i].potential))
+
+            # collect pscores
+            for i in templist:
+                if 'CMP' not in i[1]:
+                    if i[0] not in pscores:
+                        pscores[i[0]] = {}
+                    if i[1] not in pscores[i[0]]:
+                        pscores[i[0]][i[1]] = round(i[2], 4)
+                    else:
+                        pscores[i[0]][i[1]] += round(i[2], 4)
+                else:
+                    s = NSCLPredict.primeProductWeights(i[1], eng)
+                    stotal = i[2]
+
+                    for j in s:
+                        try:
+                            if s[j][1]+i[0] not in pscores:
+                                pscores[s[j][1] + i[0]] = {}
+                            if j not in pscores[s[j][1]+i[0]]:
+                                pscores[s[j][1]+i[0]][j] = s[j][0] * stotal
+                            else:
+                                pscores[s[j][1]+i[0]][j] += s[j][0] * stotal
+                        except:
+                            continue
+
+            ptimes = [x for x in pscores.keys() if x >= tick-1]
+            ptimes.sort(reverse=True)
+
+            # pscorewindow = {}
+            pscorewindowunfied = []
+            refracorywindow = [x for x in range(
+                max(ptimes)-1, max(ptimes)-1-refractoryperiod, -1)]
+            exclusioninputs = []
+
+            for rw in refracorywindow:
+                if rw in datainput:
+                    for i in datainput[rw]:
+                        exclusioninputs.append(i)
+
+            for t in ptimes:
+                for s in pscores[t]:
+                    if s not in exclusioninputs:
+                        pscorewindowunfied.append((s, pscores[t][s]))
+                    else:
+                        pscorewindowunfied.append(
+                            (s, pscores[t][s] * refractory_coeff))
+
+            pscoretempdict = {}
+
+            for tup in pscorewindowunfied:
+                if tup[0] not in pscoretempdict:
+                    pscoretempdict[tup[0]] = tup[1]
+                else:
+                    pscoretempdict[tup[0]] += tup[1]
+
+            pscorewindowunfied = [(x, pscoretempdict[x])
+                                  for x in pscoretempdict]
+
+            pscorewindowunfied.sort(key=lambda x: x[1], reverse=True)
+            pscorewindowunfied = pscorewindowunfied[:divergence]
+            # print('pscorewindow', pscorewindow)
+            # print('pscoreunified', pscorewindowunfied)
+            # print('ptimes', ptimes)
+            datainput = [x[0] for x in pscorewindowunfied if x[1] > refractory_input_threshold]
+            predictions = deepcopy(pscorewindowunfied)
+
+            tick += 1
+
+            return pscores, datainput, tick, predictions
+
+        if reset_potentials:
+            eng.reset_potentials()
+
+        # predictions = {}
+
+        # pscores, datainputs, tick, ctxacc, reap = feed_all(
+        #     datainputs, pscores={}, propagation_count=propagation_count,ctxacc=ctxacc)
+        # pp.pprint(datainputs)
+        # pp.pprint(pscores)
+
+
+        _pscores, _datainput, _tick, _predictions = feed_once(
+            datainput, tick, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'])
+        pscores, datainput, tick, predictions = (_pscores, _datainput, _tick, _predictions)
+
+
+        pdistinct = {}
+
+        for t in pscores:
+            if t not in pdistinct:
+                pdistinct[t] = {}
+            for k in pscores[t]:
+                pk = k.replace("*", "")
+                if pk not in pdistinct[t]:
+                    pdistinct[t][pk] = pscores[t][k]
+                else:
+                    pdistinct[t][pk] += pscores[t][k]
+
+        # to_remove = [x for x in datainput if datainput ]
+        # for r in to_remove:
+            # del datainput[r]
+
+        return pscores, datainput, tick, predictions, pdistinct
+
+
+
     def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2, ctxacc= []):
 
         tick = min(list(datainputs.keys()))
@@ -48,7 +181,7 @@ class NSCLPredict:
                             (t, i, eng.network.neurones[i].potential))
                 # print(f'processing all, at {t}')
                 tick += 1
-                print()
+                # print()
 
             for t in range(propagation_count):
                 r, e, a, p = eng.algo([], p)

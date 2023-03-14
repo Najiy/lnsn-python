@@ -438,7 +438,7 @@ def compileneuronegraph(fname="defparams.json", ticks=15, xres=8, yres=4):
     xcoords = [x for x in range(-2, ticks)]
     active = [x-4 for x in xcoords if nprof_y[x]
               >= defparams["BindingThreshold"]]
-    
+
     # print(nprof_x)
     # print(nprof_y)
     # print(active)
@@ -526,8 +526,8 @@ def stream(streamfile, trace=True):
 
             r, e, a, p = eng.algo(inputs[eng.tick], p, meta, trace)
 
-            if eng.tick == maxit:
-                graphout(eng)
+            # if eng.tick == maxit:
+            #     graphout(eng)
 
         except KeyboardInterrupt:
             running = False
@@ -1259,19 +1259,19 @@ while True:
         data = jstream_test('activities_dict.json')
         keys = data.keys()
 
-        input(data)
+        # input(data)
 
-        include_keys = [
-            'Doing laundry',
-            'Watching TV',
-            'Preparing breakfast',
-        ]
+        # include_keys = [
+        #     'Doing laundry',
+        #     'Watching TV',
+        #     'Preparing breakfast',
+        # ]
 
-        # include_keys = [x for x in data.keys()]
+        include_keys = [x for x in data.keys()]
 
-
-        pprint.pprint(include_keys)
-        input()
+        # print('timelogs')
+        # pprint.pprint(include_keys)
+        # input('\n')
 
         included_data = {}
 
@@ -1281,12 +1281,11 @@ while True:
         # lowest = 0
         # highest = 0
 
-
         intervals_onoff = {'activity': [], 'interval': []}
         intervals_on = {'activity': [], 'interval': []}
         intervals_off = {'activity': [], 'interval': []}
         sensors = []
-
+        timelogs_all = []
 
         for include in include_keys:
             for instance in data[include]:
@@ -1306,12 +1305,17 @@ while True:
                     timelogs.append((entry[1], int(entry[0]), 1))
                     timelogs.append((entry[2], int(entry[0]), 0))
 
+            timelogs_all.extend(timelogs)
             timelogs = sorted(timelogs, key=lambda x: x[0], reverse=False)
             earliest = timelogs[0][0]
             latest = timelogs[-1][0]
             timelogs_on = [x for x in timelogs if x[2] == 1]
             timelogs_off = [x for x in timelogs if x[2] == 0]
             sensors.extend(item[1] for item in timelogs)
+
+            print('timelogs')
+            print(len(timelogs), len(timelogs_all))
+            input()
 
             for i in range(len(timelogs)-1):
                 intervals_onoff['activity'].append(include)
@@ -1351,6 +1355,10 @@ while True:
         print('t_latest', latest)
         # input()
 
+        timelogs_all = sorted(timelogs_all, key=lambda x: x[0], reverse=False)
+        earliest = timelogs_all[0][0]
+        latest = timelogs_all[-1][0]
+
         tdata = {}
         csv_content = []
         csv_content_unpadded = []
@@ -1359,23 +1367,23 @@ while True:
         csv_content.append(','.join(headers)+',\n')
         csv_content_unpadded.append(','.join(headers)+',\n')
 
-        for t in timelogs:
+        for t in timelogs_all:
             if t[0]-earliest not in tdata:
                 tdata[t[0]-earliest] = []
             tdata[t[0]-earliest].append((t[1], t[2]))
 
-        print(timelogs)
+        print(timelogs_all)
 
         for t in range(0, latest-earliest+60):
             x = ['' for x in headers]
             x[0] = str(t)
 
             # print('t = ', t, end='')
-            
+
             skip = True
             if t in tdata:
                 for it in tdata[t]:
-                    if it[1] == 1: # or it[1] == 0:
+                    if it[1] == 1 or it[1] == 0:  # (on, on/off, off)
                         idx = headers.index(str(it[0]))
                         x[idx] = str(it[1])
                         skip = False
@@ -1387,15 +1395,14 @@ while True:
 
         # print('done')
 
-        fs = open(f'dataset/MIT_{len(include_keys)}S.csv','w')
+        fs = open(f'dataset/MIT_{len(include_keys)}S_ONOFF.csv', 'w')
         fs.writelines(csv_content)
         fs.close()
-        fs = open(f'dataset/MIT_{len(include_keys)}S_UPADDED.csv','w')
+        fs = open(f'dataset/MIT_{len(include_keys)}S_ONOFF_UPADDED.csv', 'w')
         fs.writelines(csv_content_unpadded)
         fs.close()
 
-        ################ META
-
+        # META
 
         meta_headers = "sensor,records,elapsed,unix_oldest,unix_newest,oldest,newest,minimum,maximum,min2,max2,min3,max3,\n"
 
@@ -1405,24 +1412,26 @@ while True:
         for h in headers:
             if "F" in h:
                 meta_content.append(
-                    meta_line.replace("name", h).replace("min", "0").replace("max", "1024")
+                    meta_line.replace("name", h).replace(
+                        "min", "0").replace("max", "1024")
                     + "\n"
                 )
             elif "S" in h:
                 meta_content.append(
-                    meta_line.replace("name", h).replace("min", "0").replace("max", "1") + "\n"
+                    meta_line.replace("name", h).replace(
+                        "min", "0").replace("max", "1") + "\n"
                 )
             else:
                 meta_content.append(
-                    meta_line.replace("name", h).replace("min", "0").replace("max", "1") + "\n"
+                    meta_line.replace("name", h).replace(
+                        "min", "0").replace("max", "1") + "\n"
                 )
 
         print(meta_content)
 
-        f = open(f'dataset/MIT_{len(include_keys)}S_meta.csv','w')
+        f = open(f'dataset/MIT_{len(include_keys)}S_meta.csv', 'w')
         # f = open(f"meta_MIT{f_tagname}.csv", "w")
         f.writelines(meta_content)
-
 
         # print(csv_content)
 
@@ -1457,24 +1466,25 @@ while True:
         # activity_number = int(input('activity number: '))
         # priories = int(input("first priories sequence (length): "))
 
-
         include_keys = [
             'Doing laundry',
             # 'Watching TV',
             # 'Preparing breakfast',
         ]
 
+        # include_keys = [x for x in data.keys()]
+
         # pactivity = data[predict_activity][activity_number]
         pactivity = []
         for activity in include_keys:
-            pactivity.extend([item for sublist in data[activity] for item in sublist])
+            pactivity.extend([item for sublist in data[activity]
+                             for item in sublist])
 
         # pp.pprint(pactivity)
         # input()
 
         # print(pactivity)
         # input()
-
 
         # file_data = f"./dataset/{command[1]}"
         # file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
@@ -1483,7 +1493,7 @@ while True:
 
         reset_potentials = True if input(
             "reset potentials (y/n): ") == 'y' else False
-        
+
         # first = int(input("first priories: "))
         # last = int(input("last row in file (stream to): "))
         pticks = inputDef("infer length after stream (def 20): ",
@@ -1509,11 +1519,9 @@ while True:
             result = {}
             keys = [x for x in act_stream.keys()]
             keys.sort()
-            for i in range(0,len(keys)):
+            for i in range(0, len(keys)):
                 result[i] = act_stream[keys[i]]
             return result
-        
-
 
         pactivity_stream = unpad(pactivity_stream)
         pp.pprint(pactivity_stream)
@@ -1524,7 +1532,6 @@ while True:
         for i in range(last, last+60):
             if i not in pactivity_stream:
                 pactivity_stream[i] = []
-
 
         # dataCompare = {}
 
@@ -1550,9 +1557,10 @@ while True:
         accpredictions = {}
         accinputs = {}
 
-        counts = [0,0,0,0] # count, top prediction, ctx prediction, out of context
+        # count, top prediction, ctx prediction, out of context
+        counts = [0, 0, 0, 0]
 
-        for rindex in range(earliest+1,last+1):
+        for rindex in range(earliest+1, last+1):
             # data = dict(itertools.islice(pactivity_stream.items(), rindex))
             # print(pact_stream)
             # j = pact_stream[earliest-earliest: rindex-earliest]
@@ -1563,48 +1571,44 @@ while True:
                 if i in pactivity_stream and pactivity_stream[i] != []:
                     data[i] = pactivity_stream[i]
 
-            pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng  = npredict.infer_unfolding(eng, data, pticks, reset_potentials,
-                                                                            propagation_count=20, refractoryperiod=refract, divergence=divergence)
+            pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng = npredict.infer_unfolding(eng, data, pticks, reset_potentials,
+                                                                                                              propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
             # eng = neweng
 
             # print("Accuracy")
             # print("Accuracy")
 
-
             # print("Params")
             # pp.pprint(eng.network.params)
 
-            # print("\nInputs")
-            # pp.pprint(pactivity_stream)
+            # print
+            
+
             clear()
 
             print('####################### START ##########################')
-            print(earliest,rindex ,last, '---',earliest-earliest,rindex-earliest ,last-earliest)
+            print(earliest, rindex, last, '---', earliest -
+                  earliest, rindex-earliest, last-earliest)
 
 
-         
-        
-            # print("\nPScores")
-            # pp.pprint(pscores)
+            high = 0
+            try:
+                high = max(pscores.keys())
+            except:
+                pass
+            predictions = {high: pscores[high]}  # pscore at future timestep
 
-            predictions = {}
-            # pscores = list(pscores.items())
+            # filter to only highest divergence
+            predictions_list = [(x, predictions[list(predictions.keys())[0]][x])
+                                for x in predictions[list(predictions.keys())[0]].keys()]
+            predictions_list = sorted(predictions_list, key=lambda x: x[1], reverse=True)[:divergence]
+            predictions = dict(predictions_list)
+            predictions = {high:predictions}
 
-
-            pdata = [x for x in list(data.items()) if x[0] >= rindex -200]
+            pdata = [x for x in list(data.items()) if x[0] >= rindex - 200]
             pdata = [j for sub in [x[1] for x in pdata] for j in sub]
-            
-     
 
-            # pred = [x for x in list(pscores.items()) if x[0] >= rindex -200 and x[0] <= rindex+200]
-            pred =  [pscores[tt] for tt in [t for t in pscores if t >= rindex -200 and t <= rindex+200] if tt in pscores]
-            for sett in pred:
-                for key in sett.keys():
-                    if key not in predictions and key not in pdata:
-                        predictions[key] = 0.0
-                    if key not in pdata:
-                        predictions[key] += sett[key]
 
             if True:
                 # print("\nAccInputs")
@@ -1617,19 +1621,26 @@ while True:
                 #     print('\nWPrevAccInputs')
                 #     pp.pprint(list(accinputs.values())[-1])
 
+                # print("\nPscores")
+                # pp.pprint(pscores)
+
                 if len(accpredictions.values()) != 0:
                     print('\nPrevPredictions')
                     pp.pprint(list(accpredictions.values())[-1])
 
                 print('\nWAccInputs')
                 pp.pprint(pdata[-1])
-        
-                # print("\nPredictions")
-                # pp.pprint(predictions)
 
-                input()
+                # potentials = [(x,eng.network.neurones[x].potential) for x in pdata]
 
+                # print('\Potentials')
+                # pp.pprint(potentials)
+                print("\nPredictions")
+                pp.pprint(predictions)
 
+                # input()
+
+            accpredictions[rindex] = {}
             if len(predictions.keys()) != 0:
                 accpredictions[rindex] = predictions
 
@@ -1640,35 +1651,31 @@ while True:
                 if str(list(accinputs.values())[-2]) != str(list(accinputs.values())[-1]):
                     counts[0] += 1
 
-                    last_input = list(accinputs.values())[-1][-1]
-                    prev_predictions = {}
-                    highest_value = ''
-  
+                    prev_pscore = list(accpredictions.values())[-2]
+                    inp = pdata[-1]
+                    inp_prevv = pdata[-2]
+                    t = [x for x in prev_pscore.keys()][0]
+                    prev_pscore = prev_pscore[t]
+
+                    if inp in prev_pscore:
+                        counts[2] += 1
+
                     try:
-                        prev_predictions = list(accpredictions.values())[-2]
-                        highest_value = max(prev_predictions, key=prev_predictions.get)
-                        # print(last_input)
-                        # print(list(list(accpredictions.values())[-2].keys()))
-                        # print(last_input in list(list(accpredictions.values())[-2].keys()))
+                        prev_pscore.pop(inp_prevv)
+                        highest_value = max(prev_pscore, key=prev_pscore.get)
+                        if inp == highest_value:
+                            counts[1] += 1
                     except:
                         pass
 
-                    if last_input == highest_value:
-                        counts[1] += 1
-                    elif last_input in list(prev_predictions.keys()):
-                        counts[2] += 1
-                    else:
-                        counts[3] += 1
-
-                    # print(counts)
-                    # input()
+            print()
             print(counts)
 
             print('####################### END ##########################')
             # input()
 
         input()
-        
+
         # save = input("\nsave results in filename (nosave, leave empty): ")
 
         # if save != "":
@@ -1687,9 +1694,11 @@ while True:
 
         print("infer progressive")
 
-        file = inputDef("data to load","./dataset/old/dataset_sin_S10F10.csv", str)
-        metafile = inputDef("meta to load","./dataset/old/meta_sin_S10F10.csv", str)
-    
+        file = inputDef(
+            "data to load", "./dataset/old/dataset_sin_S10F10.csv", str)
+        metafile = inputDef(
+            "meta to load", "./dataset/old/meta_sin_S10F10.csv", str)
+
         pactivity_stream = {}
 
         metafile = open(metafile, "r")
@@ -1707,7 +1716,7 @@ while True:
 
         fs = open(file, 'r')
         data = fs.readlines()
-        data = [x.replace('\n','') for x in data]
+        data = [x.replace('\n', '') for x in data]
         header = data[0].split(',')
 
         for line in data[1:]:
@@ -1726,7 +1735,7 @@ while True:
 
         reset_potentials = True if input(
             "reset potentials (y/n): ") == 'y' else False
-        
+
         # first = int(input("first priories: "))
         # last = int(input("last row in file (stream to): "))
         pticks = inputDef("infer length after stream (def 20): ",
@@ -1744,19 +1753,17 @@ while True:
         #     if entry[1] not in pactivity_stream:
         #         pactivity_stream[entry[1]] = []
         #     pactivity_stream[entry[1]].append(f'{entry[0]}~1-2')
-            # if entry[2] not in pactivity_stream:
-            #     pactivity_stream[entry[2]] = []
-            # pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
+        # if entry[2] not in pactivity_stream:
+        #     pactivity_stream[entry[2]] = []
+        # pactivity_stream[entry[2]].append(f'{entry[0]}~0-1')
 
         def unpad(act_stream):
             result = {}
             keys = [x for x in act_stream.keys()]
             keys.sort()
-            for i in range(0,len(keys)):
+            for i in range(0, len(keys)):
                 result[i] = act_stream[keys[i]]
             return result
-        
-
 
         # pactivity_stream = unpad(pactivity_stream)
         pp.pprint(pactivity_stream)
@@ -1767,7 +1774,6 @@ while True:
         for i in range(last, last+60):
             if i not in pactivity_stream:
                 pactivity_stream[i] = []
-
 
         # dataCompare = {}
 
@@ -1793,9 +1799,10 @@ while True:
         accpredictions = {}
         accinputs = {}
 
-        counts = [0,0,0,0] # count, top prediction, ctx prediction, out of context
+        # count, top prediction, ctx prediction, out of context
+        counts = [0, 0, 0, 0]
 
-        for rindex in range(earliest+1,last+1):
+        for rindex in range(earliest+1, last+1):
             # data = dict(itertools.islice(pactivity_stream.items(), rindex))
             # print(pact_stream)
             # j = pact_stream[earliest-earliest: rindex-earliest]
@@ -1806,15 +1813,13 @@ while True:
                 if i in pactivity_stream and pactivity_stream[i] != []:
                     data[i] = pactivity_stream[i]
 
-            pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng  = npredict.infer_unfolding(eng, data, pticks, reset_potentials,
-                                                                            propagation_count=20, refractoryperiod=refract, divergence=divergence)
+            pscores, datainputs, tick, rea, predictions, pdistinct, ctxacc, neweng = npredict.infer_unfolding(eng, data, pticks, reset_potentials,
+                                                                                                              propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
-            
             # eng = neweng
 
             # print("Accuracy")
             # print("Accuracy")
-
 
             # print("Params")
             # pp.pprint(eng.network.params)
@@ -1824,24 +1829,20 @@ while True:
             clear()
 
             print('####################### START ##########################')
-            print(earliest,rindex ,last, '---',earliest-earliest,rindex-earliest ,last-earliest)
+            print(earliest, rindex, last, '---', earliest -
+                  earliest, rindex-earliest, last-earliest)
 
-
-         
-        
             # print("\nPScores")
             # pp.pprint(pscores)
             high = max(pscores.keys())
             # predictions
             # predictions = {high:Counter(pscores[high])+ Counter(pscores[high-1])}
-            predictions = {high:pscores[high]}
+            predictions = {high: pscores[high]}
             # pscores = list(pscores.items())
 
-
-            pdata = [x for x in list(data.items()) if x[0] >= rindex -200]
+            pdata = [x for x in list(data.items()) if x[0] >= rindex - 200]
             pdata = [j for sub in [x[1] for x in pdata] for j in sub]
-            
-     
+
             # pred = [x for x in list(pscores.items()) if x[0] >= rindex -200 and x[0] <= rindex+200]
             # pred =  [pscores[tt] for tt in [t for t in pscores if t >= rindex -200 and t <= rindex+200] if tt in pscores]
             # for sett in pred:
@@ -1881,7 +1882,6 @@ while True:
 
                 # input()
 
-
             accpredictions[rindex] = {}
             if len(predictions.keys()) != 0:
                 accpredictions[rindex] = predictions
@@ -1906,10 +1906,9 @@ while True:
                         prev_pscore.pop(inp_prevv)
                         highest_value = max(prev_pscore, key=prev_pscore.get)
                         if inp == highest_value:
-                            counts[1]+=1
+                            counts[1] += 1
                     except:
                         pass
-
 
             print()
             print(counts)
@@ -1918,13 +1917,12 @@ while True:
             # input()
 
         input()
-        
+
         # save = input("\nsave results in filename (nosave, leave empty): ")
 
         # if save != "":
         #     jsondump("feedtraces2", f"{save}.json", {
         #              "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
-
 
     if command[0] in ["tracepaths", "trace", "traces", "paths", "path"]:
         limits = float(command[1])
@@ -2028,82 +2026,82 @@ while True:
 
         graph_distinct_predictions(pdistinct)
 
-    if command[0] == "infprogr":
-        def inputDef(prompt, defval, casting):
-            x = input(prompt)
-            try:
-                return casting(x)
-            except:
-                return defval
+    # if command[0] == "infprogr":
+    #     def inputDef(prompt, defval, casting):
+    #         x = input(prompt)
+    #         try:
+    #             return casting(x)
+    #         except:
+    #             return defval
 
-        print("infer progressive")
+    #     print("infer progressive")
 
-        file_data = f"./dataset/old/dataset_{command[1]}_{command[2]}.csv"
-        file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
+    #     file_data = f"./dataset/old/dataset_{command[1]}_{command[2]}.csv"
+    #     file_meta = f"./dataset/old/meta_{command[1]}_{command[2]}.csv"
 
-        alldata = load_data(file_data, file_meta)
+    #     alldata = load_data(file_data, file_meta)
 
-        reset_potentials = True if input(
-            "reset potentials (y/n): ") == 'y' else False
-        first = int(input("first row in file (stream from): "))
-        last = int(input("last row in file (stream to): "))
-        pticks = inputDef("infer length after stream (def 20): ",
-                          eng.network.params['InferLength'], int)
-        refract = inputDef("infer-refractory period (def 4): ",
-                           eng.network.params['InferRefractoryWindow'], int)
-        divergence = inputDef("divergence count (def 4): ",
-                              eng.network.params['InferDivergence'], int)
+    #     reset_potentials = True if input(
+    #         "reset potentials (y/n): ") == 'y' else False
+    #     first = int(input("first row in file (stream from): "))
+    #     last = int(input("last row in file (stream to): "))
+    #     pticks = inputDef("infer length after stream (def 20): ",
+    #                       eng.network.params['InferLength'], int)
+    #     refract = inputDef("infer-refractory period (def 4): ",
+    #                        eng.network.params['InferRefractoryWindow'], int)
+    #     divergence = inputDef("divergence count (def 4): ",
+    #                           eng.network.params['InferDivergence'], int)
 
-        data = {}
-        dataCompare = {}
+    #     data = {}
+    #     dataCompare = {}
 
-        for t in range(first, last):
-            data[t] = deepcopy(alldata[t])
+    #     for t in range(first, last):
+    #         data[t] = deepcopy(alldata[t])
 
-        for t in range(first, last+pticks):
-            dataCompare[t] = deepcopy(alldata[t])
+    #     for t in range(first, last+pticks):
+    #         dataCompare[t] = deepcopy(alldata[t])
 
-        del alldata
+    #     del alldata
 
-        pprint.pprint(data)
-        input()
+    #     pprint.pprint(data)
+    #     input()
 
-        priories = deepcopy(data)
-        pscores, datainputs, tick, rea, predictions, pdistinct = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
-                                                                          propagation_count=20, refractoryperiod=refract, divergence=divergence)
+    #     priories = deepcopy(data)
+    #     pscores, datainputs, tick, rea, predictions, pdistinct = npredict.infer_unfolding(deepcopy(eng), data, pticks, reset_potentials,
+    #                                                                                       propagation_count=20, refractoryperiod=refract, divergence=divergence)
 
-        for t in range(last, last+pticks-2):
-            try:
-                sc = [p[1] for d in dataCompare[t]
-                      for p in predictions[t] if p[0] == d]
-                # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
-                print(t, dataCompare[t], sc, predictions[t])
-            except:
-                print('error (context lost), no t-entry at', t)
+    #     for t in range(last, last+pticks-2):
+    #         try:
+    #             sc = [p[1] for d in dataCompare[t]
+    #                   for p in predictions[t] if p[0] == d]
+    #             # sc = [x[1] for x in predictions[t] if x[0] == dataCompare[t][0]][0]
+    #             print(t, dataCompare[t], sc, predictions[t])
+    #         except:
+    #             print('error (context lost), no t-entry at', t)
 
-        print("Accuracy")
-        # print("Accuracy")
+    #     print("Accuracy")
+    #     # print("Accuracy")
 
-        print("Params")
-        pp.pprint(eng.network.params)
+    #     print("Params")
+    #     pp.pprint(eng.network.params)
 
-        print("\nPScores")
-        pp.pprint(pscores)
+    #     print("\nPScores")
+    #     pp.pprint(pscores)
 
-        print("\nInputs")
-        pp.pprint(priories)
+    #     print("\nInputs")
+    #     pp.pprint(priories)
 
-        print("\nAccInputs")
-        pp.pprint(datainputs)
+    #     print("\nAccInputs")
+    #     pp.pprint(datainputs)
 
-        print("\nPredictions")
-        pp.pprint(predictions)
+    #     print("\nPredictions")
+    #     pp.pprint(predictions)
 
-        save = input("\nsave results in filename (nosave, leave empty): ")
+    #     save = input("\nsave results in filename (nosave, leave empty): ")
 
-        if save != "":
-            jsondump("feedtraces2", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+    #     if save != "":
+    #         jsondump("feedtraces2", f"{save}.json", {
+    #                  "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
 
     if command[0] == "infunfoldacc":
         def inputDef(prompt, defval, casting):
@@ -2247,125 +2245,128 @@ while True:
             ctxaccfile.close()
             print(" [ ctxacc.csv appended ] ")
 
-    if command[0] == "infprogr":
-        def inputDef(prompt, defval, casting):
-            x = input(prompt)
-            try:
-                return casting(x)
-            except:
-                return defval
+    # if command[0] == "infprogr":
+    #     def inputDef(prompt, defval, casting):
+    #         x = input(prompt)
+    #         try:
+    #             return casting(x)
+    #         except:
+    #             return defval
 
-        print("infer progressive")
+    #     print("infer progressive")
 
-        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
-        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
+    #     file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
+    #     file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
 
-        alldata = load_data(file_data, file_meta)
+    #     alldata = load_data(file_data, file_meta)
 
-        reset_potentials = True if input(
-            "reset potentials (y/n): ") == 'y' else False
-        first = int(input("first row in file (stream from): "))
-        last = int(input("last row in file (stream to): "))
-        # pticks = inputDef("infer length after stream (def 20): ",
-        #                   eng.network.params['InferLength'], int)
-        refract = inputDef("infer-refractory period (def 4): ",
-                           eng.network.params['InferRefractoryWindow'], int)
-        divergence = inputDef("divergence count (def 8): ",
-                              eng.network.params['InferDivergence'], int)
+    #     reset_potentials = True if input(
+    #         "reset potentials (y/n): ") == 'y' else False
+    #     first = int(input("first row in file (stream from): "))
+    #     last = int(input("last row in file (stream to): "))
+    #     # pticks = inputDef("infer length after stream (def 20): ",
+    #     #                   eng.network.params['InferLength'], int)
+    #     refract = inputDef("infer-refractory period (def 4): ",
+    #                        eng.network.params['InferRefractoryWindow'], int)
+    #     divergence = inputDef("divergence count (def 8): ",
+    #                           eng.network.params['InferDivergence'], int)
 
-        data = {}
-        dataCompare = {}
+    #     data = {}
+    #     dataCompare = {}
 
-        for t in range(first, last):
-            data[t] = deepcopy(alldata[t])
+    #     for t in range(first, last):
+    #         data[t] = deepcopy(alldata[t])
 
-        for t in range(first, last+pticks):
-            dataCompare[t] = deepcopy(alldata[t])
+    #     for t in range(first, last+pticks):
+    #         dataCompare[t] = deepcopy(alldata[t])
 
-        del alldata
+    #     del alldata
 
-        accres = []
-        for div in range(1, divergence+1):
-            for ref in range(1, refract+1):
-                pscores, datainputs, tick, predictions = npredict.feed_forward_progressive(deepcopy(eng), deepcopy(data), reset_potentials,
-                                                                                      propagation_count=20, refractoryperiod=ref, divergence=div)
+    #     accres = []
+    #     for div in range(1, divergence+1):
+    #         for ref in range(1, refract+1):
+    #             pscores, datainputs, tick, predictions = npredict.feed_forward_progressive(deepcopy(eng), deepcopy(data), reset_potentials,
+    #                                                                                        propagation_count=20, refractoryperiod=ref, divergence=div)
 
-                potacc = 0.0
-                ctxloss = 0
-                ctxcount = 0
-                ctxcorr = 0
-                ctxpotacc = -1
+    #             potacc = 0.0
+    #             ctxloss = 0
+    #             ctxcount = 0
+    #             ctxcorr = 0
+    #             ctxpotacc = -1
 
-                for t in range(last, last+pticks-2):
-                    ctxcount += 1
-                    try:
-                        # check if items in datacompare are also in predictions list
-                        sc = [p[1] for d in dataCompare[t]
-                              for p in predictions[t] if p[0] == d][0]
+    #             for t in range(last, last+pticks-2):
+    #                 ctxcount += 1
+    #                 try:
+    #                     # check if items in datacompare are also in predictions list
+    #                     sc = [p[1] for d in dataCompare[t]
+    #                           for p in predictions[t] if p[0] == d][0]
 
-                        potacc += sc
-                        dcomp = dataCompare[t]
-                        pcomp = [p[0] for p in predictions[t]][:len(dataCompare[t])]
+    #                     potacc += sc
+    #                     dcomp = dataCompare[t]
+    #                     pcomp = [p[0]
+    #                              for p in predictions[t]][:len(dataCompare[t])]
 
-                        ctxcorr += len(list(set(dcomp) & set(pcomp)))
-                    except:
-                        ctxloss += 1
+    #                     ctxcorr += len(list(set(dcomp) & set(pcomp)))
+    #                 except:
+    #                     ctxloss += 1
 
-                del pscores
-                del datainputs
-                del tick
-                del predictions
+    #             del pscores
+    #             del datainputs
+    #             del tick
+    #             del predictions
 
-                try:
-                    ctxpotacc = potacc * (1 - ctxloss/ctxcount)
-                except:
-                    pass
+    #             try:
+    #                 ctxpotacc = potacc * (1 - ctxloss/ctxcount)
+    #             except:
+    #                 pass
 
-                print(f"Diverg: {div} Refrac: {ref} PotTtl: {potacc:0.2f} CtxLoss: {ctxloss/ctxcount:0.2f} CtxAcc: {ctxcorr} CtxPotDist: {ctxpotacc:0.2f}")
-                accres.append((div, ref, potacc, ctxloss / ctxcount,
-                              ctxcorr, ctxpotacc))
+    #             print(
+    #                 f"Diverg: {div} Refrac: {ref} PotTtl: {potacc:0.2f} CtxLoss: {ctxloss/ctxcount:0.2f} CtxAcc: {ctxcorr} CtxPotDist: {ctxpotacc:0.2f}")
+    #             accres.append((div, ref, potacc, ctxloss / ctxcount,
+    #                           ctxcorr, ctxpotacc))
 
-        accres.sort(key=lambda x: x[3], reverse=True)
-        accres.sort(key=lambda x: x[4], reverse=True)
-        pp.pprint(accres[:10])
-        tops = deepcopy(accres[:10])
+    #     accres.sort(key=lambda x: x[3], reverse=True)
+    #     accres.sort(key=lambda x: x[4], reverse=True)
+    #     pp.pprint(accres[:10])
+    #     tops = deepcopy(accres[:10])
 
-        accres.sort(key=lambda x: x[4], reverse=True)
-        accres.sort(key=lambda x: x[3], reverse=True)
-        pp.pprint(accres[:10])
-        tops.extend(deepcopy(accres[:10]))
+    #     accres.sort(key=lambda x: x[4], reverse=True)
+    #     accres.sort(key=lambda x: x[3], reverse=True)
+    #     pp.pprint(accres[:10])
+    #     tops.extend(deepcopy(accres[:10]))
 
-        tag = input("Save results to ctxacc.csv with tag: (leave empty, no save)? ")
+    #     tag = input(
+    #         "Save results to ctxacc.csv with tag: (leave empty, no save)? ")
 
-        if tag != "":
-            composeorder = ""
-            if eng.network.params['ComposeByCompositeFirst']:
-                composeorder += "C"
-            else:
-                composeorder += "P"
-            if eng.network.params['ComposeByPotentialFirst']:
-                composeorder += "P"
-            else:
-                composeorder += "A"
-            tag = f"B{eng.network.params['BindingCount']}L{eng.network.params['PropagationLevels']}_{composeorder}_{tag}"
+    #     if tag != "":
+    #         composeorder = ""
+    #         if eng.network.params['ComposeByCompositeFirst']:
+    #             composeorder += "C"
+    #         else:
+    #             composeorder += "P"
+    #         if eng.network.params['ComposeByPotentialFirst']:
+    #             composeorder += "P"
+    #         else:
+    #             composeorder += "A"
+    #         tag = f"B{eng.network.params['BindingCount']}L{eng.network.params['PropagationLevels']}_{composeorder}_{tag}"
 
-            try:
-                fs = open("./states/ctxacc.csv", "r")
-                fs.close()
-            except:
-                fs = open("./states/ctxacc.csv", "w+")
-                fs.write("Datetime,NetworkHashID,PredictionTag,PtRange,Binding,Levels,ComposeByPotentialsFirst,ComposeByCompositionFirst,Divergence,Refractory,PotTtl,CtxLoss,CtxAcc,CtxPotDist,\n")
-                fs.close()
+    #         try:
+    #             fs = open("./states/ctxacc.csv", "r")
+    #             fs.close()
+    #         except:
+    #             fs = open("./states/ctxacc.csv", "w+")
+    #             fs.write("Datetime,NetworkHashID,PredictionTag,PtRange,Binding,Levels,ComposeByPotentialsFirst,ComposeByCompositionFirst,Divergence,Refractory,PotTtl,CtxLoss,CtxAcc,CtxPotDist,\n")
+    #             fs.close()
 
-            ctxaccfile = open("./states/ctxacc.csv", "a")
+    #         ctxaccfile = open("./states/ctxacc.csv", "a")
 
-            for entry in tops:
-                pfile = f"{command[1]}_{command[2]}.csv"
-                ctxaccfile.write(
-                    f"{datetime.now()},{eng.network.hash_id},{tag},{first}->{last}+{pticks},{eng.network.params['BindingCount']},{eng.network.params['PropagationLevels']},{eng.network.params['ComposeByPotentialFirst']},{eng.network.params['ComposeByCompositeFirst']},{entry[0]},{entry[1]},{round(entry[2],4)},{round(entry[3],4)},{round(entry[4],4)},{round(entry[5],4)},\n")
+    #         for entry in tops:
+    #             pfile = f"{command[1]}_{command[2]}.csv"
+    #             ctxaccfile.write(
+    #                 f"{datetime.now()},{eng.network.hash_id},{tag},{first}->{last}+{pticks},{eng.network.params['BindingCount']},{eng.network.params['PropagationLevels']},{eng.network.params['ComposeByPotentialFirst']},{eng.network.params['ComposeByCompositeFirst']},{entry[0]},{entry[1]},{round(entry[2],4)},{round(entry[3],4)},{round(entry[4],4)},{round(entry[5],4)},\n")
 
-            ctxaccfile.close()
-            print(" [ ctxacc.csv appended ] ")
+    #         ctxaccfile.close()
+    #         print(" [ ctxacc.csv appended ] ")
 
     if command[0] == "trace":
         print("tracing")
@@ -2441,9 +2442,9 @@ while True:
             eng = NSCL.Engine()
             print("new net")
 
-    if command[0] == "graphout":
-        print(" exporting graphs")
-        graphout(eng)
+    # if command[0] == "graphout":
+    #     print(" exporting graphs")
+    #     graphout(eng)
 
     if command[0] == "save":
         # if len(command) > 1:
