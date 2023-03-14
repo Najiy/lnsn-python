@@ -526,8 +526,8 @@ def stream(streamfile, trace=True):
 
             r, e, a, p = eng.algo(inputs[eng.tick], p, meta, trace)
 
-            if eng.tick == maxit:
-                graphout(eng)
+            # if eng.tick == maxit:
+            #     graphout(eng)
 
         except KeyboardInterrupt:
             running = False
@@ -2442,9 +2442,9 @@ while True:
             eng = NSCL.Engine()
             print("new net")
 
-    if command[0] == "graphout":
-        print(" exporting graphs")
-        graphout(eng)
+    # if command[0] == "graphout":
+    #     print(" exporting graphs")
+    #     graphout(eng)
 
     if command[0] == "save":
         # if len(command) > 1:
