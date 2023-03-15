@@ -1466,13 +1466,13 @@ while True:
         # activity_number = int(input('activity number: '))
         # priories = int(input("first priories sequence (length): "))
 
-        include_keys = [
-            'Doing laundry',
-            # 'Watching TV',
-            # 'Preparing breakfast',
-        ]
+        # include_keys = [
+        #     'Doing laundry',
+        #     # 'Watching TV',
+        #     # 'Preparing breakfast',
+        # ]
 
-        # include_keys = [x for x in data.keys()]
+        include_keys = [x for x in data.keys()]
 
         # pactivity = data[predict_activity][activity_number]
         pactivity = []
@@ -1597,7 +1597,12 @@ while True:
                 high = max(pscores.keys())
             except:
                 pass
-            predictions = {high: pscores[high]}  # pscore at future timestep
+
+            predictions = {high:{}}
+            try:
+                predictions = {high: pscores[high]}  # pscore at future timestep
+            except:
+                pass
 
             # filter to only highest divergence
             predictions_list = [(x, predictions[list(predictions.keys())[0]][x])
