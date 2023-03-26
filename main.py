@@ -19,6 +19,7 @@ from re import search
 import math
 import hashlib
 from sklearn import preprocessing
+# from copy import deepcopy
 
 # from nscl_algo import NSCLAlgo
 # from nscl_algo import NSCLAlgo
@@ -526,8 +527,8 @@ def stream(streamfile, trace=True):
 
             r, e, a, p = eng.algo(inputs[eng.tick], p, meta, trace)
 
-            # if eng.tick == maxit:
-            #     graphout(eng)
+            if eng.tick == maxit:
+                graphout(eng)
 
         except KeyboardInterrupt:
             running = False
@@ -1583,14 +1584,12 @@ while True:
             # pp.pprint(eng.network.params)
 
             # print
-            
 
             clear()
 
             print('####################### START ##########################')
             print(earliest, rindex, last, '---', earliest -
                   earliest, rindex-earliest, last-earliest)
-
 
             high = 0
             try:
@@ -1602,13 +1601,13 @@ while True:
             # filter to only highest divergence
             predictions_list = [(x, predictions[list(predictions.keys())[0]][x])
                                 for x in predictions[list(predictions.keys())[0]].keys()]
-            predictions_list = sorted(predictions_list, key=lambda x: x[1], reverse=True)[:divergence]
+            predictions_list = sorted(predictions_list, key=lambda x: x[1], reverse=True)[
+                :divergence]
             predictions = dict(predictions_list)
-            predictions = {high:predictions}
+            predictions = {high: predictions}
 
             pdata = [x for x in list(data.items()) if x[0] >= rindex - 200]
             pdata = [j for sub in [x[1] for x in pdata] for j in sub]
-
 
             if True:
                 # print("\nAccInputs")
@@ -1695,9 +1694,9 @@ while True:
         print("infer progressive")
 
         file = inputDef(
-            "data to load", "./dataset/old/dataset_sin_S10F10.csv", str)
+            "data to load", "./Dataset/old/dataset_sinsaw_S10F10.csv", str)
         metafile = inputDef(
-            "meta to load", "./dataset/old/meta_sin_S10F10.csv", str)
+            "meta to load", "./Dataset/old/meta_sinsaw_S10F10.csv", str)
 
         pactivity_stream = {}
 
@@ -1766,6 +1765,7 @@ while True:
             return result
 
         # pactivity_stream = unpad(pactivity_stream)
+        # input("pactivity_stream")
         pp.pprint(pactivity_stream)
         input()
 
@@ -1916,13 +1916,139 @@ while True:
             print('####################### END ##########################')
             # input()
 
+        # input()
+
+        save = input("\nsave results in filename (nosave, leave empty): ")
+
+        if save != "":
+            pp.pprint(accinputs)
+            jsondump("Infers", f"{save}.json", {
+                     "params": eng.network.params, "meta": eng.meta, "predictions": accpredictions, "accinputs": accinputs, 'scores': pscores, 'inputs': pactivity_stream})
+
+    if command[0] == "infergraph":
+        fs = open(f'Infers/{command[1]}')
+        # stream_data = open(command[2],'r')
+        data = json.load(fs)
+        nodes = [x for x in data['meta']]
+        inputs = data['inputs']
+        times = [x for x in data['inputs'].keys()]
+
+        for t in times:
+            if inputs[t] == []:
+                del inputs[t]
+
+        times = [x for x in data['inputs'].keys()]
+        times = [int(t) for t in times]
+        times.sort()
+
+        predictions = data['predictions']
+        # inputlength = len(inputs)
+        inputlength = 180
+
+        print(times)
+        print(nodes, len(nodes))
+        print(len(predictions))
+
+        df = pd.DataFrame(np.zeros((20, inputlength)), columns=[
+                          x for x in range(0, inputlength)])
+
+        line_x = [x for x in range(max(times))]
+        line_y = []
+
+        for t in times:
+            try:
+                print(t)
+                for n in predictions[f'{t}'][f"{t-1}"]:
+                    idx = nodes.index(n.split('~')[0])
+                    print(n, idx)
+                    df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.5
+                    # df[t][idx] = 0.5
+            except:
+                pass
+
+        for t in range(max(times)):
+            # try:
+            line_y.append(nodes.index(inputs[str(t)][0].split('~')[0]) + 0.5)
+            # except:
+            # pass
+
+        print(len(line_x), len(line_y))
         input()
 
-        # save = input("\nsave results in filename (nosave, leave empty): ")
+        sns.lineplot(x=line_x, y=line_y, color='white', linewidth=2)
+        ax = sns.heatmap(df, vmax=1.0, cbar=False)
+        ax.invert_yaxis()
+        # ax.xaxis.tick_top()
 
-        # if save != "":
-        #     jsondump("feedtraces2", f"{save}.json", {
-        #              "params": eng.network.params, "meta": eng.meta, "datainputs": priories, "predictions": predictions, "accinputs": datainputs, "pscores_prod": pscores})
+        plt.xlabel('Sequence Steps')
+        plt.ylabel('Sensor ID')
+        plt.tight_layout()
+        # plt.grid(True)
+
+        plt.show()
+
+    if command[0] == "infergraph2":
+        fs = open(f'Infers/{command[1]}')
+        # stream_data = open(command[2],'r')
+        data = json.load(fs)
+        nodes = [x for x in data['meta']]
+        inputs = data['inputs']
+        times = [x for x in data['inputs'].keys()]
+
+        for t in times:
+            if inputs[t] == []:
+                del inputs[t]
+
+        times = [x for x in data['inputs'].keys()]
+        times = [int(t) for t in times]
+        times.sort()
+
+        predictions = data['predictions']
+        # inputlength = len(inputs)
+        inputlength = 180
+
+        print(times)
+        print(nodes, len(nodes))
+        print(len(predictions))
+
+        df = pd.DataFrame(np.zeros((20, inputlength)), columns=[
+                          x for x in range(0, inputlength)])
+
+        line_x = [x for x in range(max(times))]
+        line_y = []
+
+        for t in times:
+            try:
+                print(t)
+                for n in predictions[f'{t}'][f"{t-1}"]:
+                    idx = nodes.index(n.split('~')[0])
+                    print(n, idx)
+                    df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.5
+                    # df[t][idx] = 0.5
+            except:
+                pass
+
+        for t in range(max(times)):
+            # try:
+            line_y.append(nodes.index(inputs[str(t)][0].split('~')[0]) + 0.5)
+            # except:
+            # pass
+
+        print(len(line_x), len(line_y))
+        input()
+
+        sns.lineplot(x=line_x, y=line_y, color='white', linewidth=2)
+        ax = sns.heatmap(df, vmax=1.0, cbar=False)
+        ax.invert_yaxis()
+        # ax.xaxis.tick_top()
+
+        plt.xlabel('Sequence Steps')
+        plt.ylabel('Sensor ID')
+        plt.tight_layout()
+        # plt.grid(True)
+
+        plt.show()
+
 
     if command[0] in ["tracepaths", "trace", "traces", "paths", "path"]:
         limits = float(command[1])
@@ -2442,9 +2568,9 @@ while True:
             eng = NSCL.Engine()
             print("new net")
 
-    # if command[0] == "graphout":
-    #     print(" exporting graphs")
-    #     graphout(eng)
+    if command[0] == "graphout":
+        print(" exporting graphs")
+        graphout(eng)
 
     if command[0] == "save":
         # if len(command) > 1:
