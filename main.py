@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 # from msilib.schema import File
+from matplotlib.colors import LinearSegmentedColormap
 from audioop import reverse
 from cgi import print_environ
 from copy import deepcopy
@@ -1803,10 +1804,12 @@ while True:
         counts = [0, 0, 0, 0]
 
         for rindex in range(earliest+1, last+1):
+
             # data = dict(itertools.islice(pactivity_stream.items(), rindex))
             # print(pact_stream)
             # j = pact_stream[earliest-earliest: rindex-earliest]
             # print(j)
+
             data = {}
 
             for i in range(earliest, rindex):
@@ -1845,6 +1848,7 @@ while True:
 
             # pred = [x for x in list(pscores.items()) if x[0] >= rindex -200 and x[0] <= rindex+200]
             # pred =  [pscores[tt] for tt in [t for t in pscores if t >= rindex -200 and t <= rindex+200] if tt in pscores]
+
             # for sett in pred:
             #     for key in sett.keys():
             #         if key not in predictions and key not in pdata:
@@ -1871,7 +1875,7 @@ while True:
                     pp.pprint(list(accpredictions.values())[-1])
 
                 print('\nWAccInputs')
-                pp.pprint(pdata[-1])
+                pp.pprint(pdata)
 
                 # potentials = [(x,eng.network.neurones[x].potential) for x in pdata]
 
@@ -1883,6 +1887,7 @@ while True:
                 # input()
 
             accpredictions[rindex] = {}
+
             if len(predictions.keys()) != 0:
                 accpredictions[rindex] = predictions
 
@@ -1920,10 +1925,21 @@ while True:
 
         save = input("\nsave results in filename (nosave, leave empty): ")
 
+        def pscore_filter(pscores, ctx= divergence):
+            for t in pscores:
+                tscore = list(pscores[t].items())
+                tscore = [x[1] for x in tscore]
+                tscore.sort(reverse=True)
+                # tscore.sort()
+                tscore = tscore[:ctx]
+                pp.pprint(tscore)
+                pscores[t] = {key:val for key, val in pscores[t].items() if val in tscore}
+            return pscores
+
         if save != "":
             pp.pprint(accinputs)
             jsondump("Infers", f"{save}.json", {
-                     "params": eng.network.params, "meta": eng.meta, "predictions": accpredictions, "accinputs": accinputs, 'scores': pscores, 'inputs': pactivity_stream})
+                     "params": eng.network.params, "meta": eng.meta, "predictions": accpredictions, "accinputs": accinputs, 'scores': pscore_filter(pscores, divergence), 'inputs': pactivity_stream})
 
     if command[0] == "infergraph":
         fs = open(f'Infers/{command[1]}')
@@ -1932,6 +1948,7 @@ while True:
         nodes = [x for x in data['meta']]
         inputs = data['inputs']
         times = [x for x in data['inputs'].keys()]
+        ctx= 4
 
         for t in times:
             if inputs[t] == []:
@@ -1952,19 +1969,8 @@ while True:
         df = pd.DataFrame(np.zeros((20, inputlength)), columns=[
                           x for x in range(0, inputlength)])
 
-        line_x = [x for x in range(max(times))]
+        line_x = [x+0.5 for x in range(max(times))]
         line_y = []
-
-        for t in times:
-            try:
-                print(t)
-                for n in predictions[f'{t}'][f"{t-1}"]:
-                    idx = nodes.index(n.split('~')[0])
-                    print(n, idx)
-                    df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.5
-                    # df[t][idx] = 0.5
-            except:
-                pass
 
         for t in range(max(times)):
             # try:
@@ -1972,25 +1978,86 @@ while True:
             # except:
             # pass
 
+        for t in times:
+            try:
+                print(t)
+                tscore = list(predictions[f'{t}'][f"{t-1}"].items())
+                tscore = [x[1] for x in tscore]
+                tscore.sort(reverse=True)
+                # tscore.sort()
+                tscore = tscore[:ctx]
+                # pp.pprint(tscore)
+                predictions[f'{t}'][f"{t-1}"] = {key:val for key, val in predictions[f'{t}'][f"{t-1}"].items() if val in tscore}
+
+                for n in predictions[f'{t}'][f"{t-1}"]:
+                    idx = nodes.index(n.split('~')[0])
+                    print(n, idx)
+
+                    if line_y[t] - 0.5 == idx:
+                        df[t][idx] = 1.0
+                    else:
+                        # df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.2
+                        df[t][idx] = 0.2
+            except:
+                pass
+
+
         print(len(line_x), len(line_y))
         input()
 
         sns.lineplot(x=line_x, y=line_y, color='white', linewidth=2)
         ax = sns.heatmap(df, vmax=1.0, cbar=False)
         ax.invert_yaxis()
+
+        ax.set_yticks([x+0.5 for x in range(20)]) # <--- set the ticks first
+        ax.set_yticklabels([x+1 if (x+1)%2==0 else '' for x in range(20)])
         # ax.xaxis.tick_top()
 
-        plt.xlabel('Sequence Steps')
-        plt.ylabel('Sensor ID')
+        plt.xlabel('Sequence Steps', fontsize=18)
+        plt.ylabel('Sensor ID', fontsize=18)
+        # plt.yticks(fontsize=12)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
         plt.tight_layout()
-        # plt.grid(True)
 
         plt.show()
 
     if command[0] == "infergraph2":
+
+        ctx = 4
+        
+        def load_csv(file, length, xoffset=False):
+            data_csv = open(file).readlines()
+            header = data_csv[0]
+            data_csv.pop(0)
+
+            for i in range(0, len(data_csv)):
+                data_csv[i] = data_csv[i].replace('\n','').split(',')
+                # data_csv[i].pop(0)
+                data_csv[i] = ['1' if x != '' else '' for x in data_csv[i]]
+                data_csv[i].pop(0)
+                print(data_csv[i])
+                data_csv[i] = data_csv[i].index('1')
+
+            data_csv = data_csv[:length]
+            # data_csv = [int(x) for x in data_csv]
+
+            # pp.pprint(data_csv[:5])
+            # input()
+            # pp.pprint(data_csv[:-5])
+            # input()
+
+            if xoffset:
+                data_csv.insert(0, 0)
+                data_csv.pop(len(data_csv)-1)
+
+            return data_csv
+        
+
         fs = open(f'Infers/{command[1]}')
         # stream_data = open(command[2],'r')
         data = json.load(fs)
+
         nodes = [x for x in data['meta']]
         inputs = data['inputs']
         times = [x for x in data['inputs'].keys()]
@@ -2003,6 +2070,7 @@ while True:
         times = [int(t) for t in times]
         times.sort()
 
+
         predictions = data['predictions']
         # inputlength = len(inputs)
         inputlength = 180
@@ -2011,39 +2079,78 @@ while True:
         print(nodes, len(nodes))
         print(len(predictions))
 
-        df = pd.DataFrame(np.zeros((20, inputlength)), columns=[
-                          x for x in range(0, inputlength)])
 
-        line_x = [x for x in range(max(times))]
-        line_y = []
+        df = pd.DataFrame(np.zeros((20, inputlength)), columns=[x for x in range(0, inputlength)])
+
+        line_x = [x+0.5 for x in range(500)]
+        # line_y = []
+
+        sindata = load_csv('Dataset/old/dataset_sin_S10F10.csv', max(times), True)
+        sawdata = load_csv('Dataset/old/dataset_saw_S10F10.csv', max(times), False)
+
+        sindata = [x+0.5 for x in sindata][:500]
+        sawdata = [x+0.5 for x in sawdata][:500]
+
 
         for t in times:
             try:
-                print(t)
+                # print(t)
+                # print(t)
+                tscore = list(predictions[str(t)][str(t-1)].items())
+                tscore = [x[1] for x in tscore]
+                tscore.sort(reverse=True)
+                # tscore.sort()
+                tscore = tscore[:ctx]
+                # pp.pprint(tscore)
+                predictions[f'{t}'][f"{t-1}"] = {key:val for key, val in predictions[f'{t}'][f"{t-1}"].items() if val in tscore}
+                
+
                 for n in predictions[f'{t}'][f"{t-1}"]:
                     idx = nodes.index(n.split('~')[0])
-                    print(n, idx)
-                    df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.5
-                    # df[t][idx] = 0.5
+                    # print(n, idx, predictions[str(t)][str(t-1)][n], sindata[t] )
+                    # input()
+                    # df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.5
+                    if sindata[t] -0.5 == idx:
+                        df[t][idx] = 1.0
+                    elif sawdata[t] -0.5 == idx:
+                        df[t][idx] = 1.0
+                    else:
+                        df[t][idx] = 0.2
             except:
                 pass
 
-        for t in range(max(times)):
-            # try:
-            line_y.append(nodes.index(inputs[str(t)][0].split('~')[0]) + 0.5)
-            # except:
-            # pass
 
-        print(len(line_x), len(line_y))
+        # sindata = sindata[:max(times)]
+        # sawdata = sawdata[:max(times)]
+
+        # for t in range(max(times)):
+        #     # try:
+        #     line_y.append(nodes.index(inputs[str(t)][0].split('~')[0]) + 0.5)
+        #     # except:
+        #     # pass
+
+        print(len(line_x), len(sindata), len(sawdata))
         input()
 
-        sns.lineplot(x=line_x, y=line_y, color='white', linewidth=2)
+        # colors = ["gray", "lightgray"] 
+        # cmap = LinearSegmentedColormap.from_list('Custom', colors, len(colors))
+
+
+        l1 = sns.lineplot(x=line_x, y=sindata, color='white', linewidth=2)
+        l2 = sns.lineplot(x=line_x, y=sawdata, color='white', linewidth=2)
+      
         ax = sns.heatmap(df, vmax=1.0, cbar=False)
         ax.invert_yaxis()
+
+        ax.set_yticks([x+0.5 for x in range(20)]) # <--- set the ticks first
+        ax.set_yticklabels([x+1 if (x+1)%2==0 else '' for x in range(20)])
         # ax.xaxis.tick_top()
 
-        plt.xlabel('Sequence Steps')
-        plt.ylabel('Sensor ID')
+        plt.xlabel('Sequence Steps', fontsize=18)
+        plt.ylabel('Sensor ID', fontsize=18)
+        # plt.yticks(fontsize=12)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
         plt.tight_layout()
         # plt.grid(True)
 
