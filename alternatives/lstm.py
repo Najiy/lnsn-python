@@ -20,6 +20,7 @@ import matplotlib.ticker as plticker
 def createModel():
     model = tfp.keras.Sequential([
         tfp.keras.layers.LSTM(4, input_shape=(3, 1)),
+        # tfp.keras.layers.LSTM(4, input_shape=(3, 1)),
         # tfp.keras.layers.InputLayer(input_shape=(32, 32, 3))
         tfp.keras.layers.Dense(1)
 
@@ -36,7 +37,7 @@ def create_dataset(dataset, look_back=1):
 	return np.array(dataX), np.array(dataY)
 
 
-def process_dataset(dataset= 'dataset/dataset_sin_S10F10.csv'):
+def process_dataset(dataset= 'Dataset/old/dataset_sin_S10F10.csv'):
     fp = open(dataset)
     lines = fp.readlines()
 
@@ -59,7 +60,9 @@ def process_dataset(dataset= 'dataset/dataset_sin_S10F10.csv'):
 tf.random.set_seed(7)
 
 
-dataset= 'dataset/dataset_sin_S10F10.csv'
+
+
+dataset= '..//Dataset//old//dataset_sin_S10F10.csv'
 process_dataset(dataset=dataset)
 
 
@@ -72,9 +75,11 @@ dataset = dataset.astype('float32')
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
 
-train_size = int(len(dataset) * 0.67)
+train_size = int(len(dataset) * 0.5)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
+# train = train / 20
+# test = test / 20
 
 look_back = 3
 trainX, trainY = create_dataset(train, look_back)
@@ -88,7 +93,7 @@ testX = np.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 
 model = createModel()
 
-model.compile(optimizer='adam', loss='mean_squared_error')
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 model.fit(trainX, trainY, epochs=5, batch_size=1, verbose=2)
 
 

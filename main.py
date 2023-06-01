@@ -349,6 +349,9 @@ def jsondump(result_path, fnameext, jdata):
 
 def compileneuronegraph(fname="defparams.json", ticks=15, xres=8, yres=4):
 
+    sns.set(font_scale=1.40)
+    # sns.set_style("whitegrid", {"grid.color": ".2", "grid.linestyle": ":"})
+    sns.set_theme(style="white", palette=None)
     fig, axs = plt.subplots(1, 1)
 
     def neurone_profile(fname="defparams.json", start=0.30, ticks=ticks):
@@ -1695,9 +1698,9 @@ while True:
         print("infer progressive")
 
         file = inputDef(
-            "data to load", "./Dataset/old/dataset_sinsaw_S10F10.csv", str)
+            "data to load: ", "./Dataset/old/dataset_sinsaw_S10F10.csv", str)
         metafile = inputDef(
-            "meta to load", "./Dataset/old/meta_sinsaw_S10F10.csv", str)
+            "meta to load: ", "./Dataset/old/meta_sinsaw_S10F10.csv", str)
 
         pactivity_stream = {}
 
@@ -1941,7 +1944,7 @@ while True:
             jsondump("Infers", f"{save}.json", {
                      "params": eng.network.params, "meta": eng.meta, "predictions": accpredictions, "accinputs": accinputs, 'scores': pscore_filter(pscores, divergence), 'inputs': pactivity_stream})
 
-    if command[0] == "infergraph":
+    if command[0] == "infergraph": # FOR ONE SIGNAL
         fs = open(f'Infers/{command[1]}')
         # stream_data = open(command[2],'r')
         data = json.load(fs)
@@ -2022,9 +2025,9 @@ while True:
 
         plt.show()
 
-    if command[0] == "infergraph2":
+    if command[0] == "infergraph2": # FOR TWO SIGNAL
 
-        ctx = 4
+        ctx = 7
         
         def load_csv(file, length, xoffset=False):
             data_csv = open(file).readlines()
@@ -2040,6 +2043,7 @@ while True:
                 data_csv[i] = data_csv[i].index('1')
 
             data_csv = data_csv[:length]
+
             # data_csv = [int(x) for x in data_csv]
 
             # pp.pprint(data_csv[:5])
@@ -2091,6 +2095,7 @@ while True:
         sindata = [x+0.5 for x in sindata][:500]
         sawdata = [x+0.5 for x in sawdata][:500]
 
+        acc_counter = 0
 
         for t in times:
             try:
@@ -2112,12 +2117,20 @@ while True:
                     # df[t][idx] = min(predictions[str(t)][str(t-1)][n], 1.0)+0.5
                     if sindata[t] -0.5 == idx:
                         df[t][idx] = 1.0
+                        acc_counter += 1
                     elif sawdata[t] -0.5 == idx:
                         df[t][idx] = 1.0
+                        acc_counter += 1
                     else:
                         df[t][idx] = 0.2
             except:
                 pass
+
+
+        print(acc_counter)
+        print(len(times))
+            
+        accuracy = acc_counter / len(times)
 
 
         # sindata = sindata[:max(times)]
@@ -2129,6 +2142,7 @@ while True:
         #     # except:
         #     # pass
 
+        print('Accuracy', accuracy)
         print(len(line_x), len(sindata), len(sawdata))
         input()
 
@@ -2347,8 +2361,8 @@ while True:
         print("infer unfold accuracy")
         input()
 
-        file_data = f"./dataset/dataset_{command[1]}_{command[2]}.csv"
-        file_meta = f"./dataset/meta_{command[1]}_{command[2]}.csv"
+        file_data = f"./Dataset/old/dataset_{command[1]}_{command[2]}.csv"
+        file_meta = f"./Dataset/old/meta_{command[1]}_{command[2]}.csv"
 
         alldata = load_data(file_data, file_meta)
 

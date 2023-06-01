@@ -76,7 +76,7 @@ def process_dataset(dataset= 'dataset/dataset_sin_S10F10.csv'):
 tf.random.set_seed(7)
 
 
-dataset= 'dataset/dataset_sin_S10F10.csv'
+dataset= 'dataset/dataset_saw_S10F10.csv'
 process_dataset(dataset=dataset)
 
 
@@ -89,7 +89,7 @@ dataset = dataset.astype('float32')
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
 
-train_size = int(len(dataset) * 0.67)
+train_size = int(len(dataset) * 0.50)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
 
@@ -105,7 +105,7 @@ testX = np.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 
 model = createModel()
 
-model.compile(optimizer='adam', loss='mean_squared_error')
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 model.fit(trainX, trainY, epochs=5, batch_size=1, verbose=2)
 
 
