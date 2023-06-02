@@ -1,3 +1,4 @@
+(CURRENTLY UNDER FURTHER DEVELOPMENTS - MAY 2023)
 
 NSSN - Neuro-symbolic Spiking Network, NSSN.
 
