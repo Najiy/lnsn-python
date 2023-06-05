@@ -1464,7 +1464,7 @@ while True:
 
         print("infer progressive")
 
-        data = jstream_test('activities_dict.json')
+        data = jstream_test('./dataset online/MIT/subject1/subject1_act_dict.json')
 
         # print('see activities_dict.json for parameters')
         # predict_activity = input('activity to predict: ')
@@ -1472,7 +1472,7 @@ while True:
         # priories = int(input("first priories sequence (length): "))
 
         include_keys = [
-            'Doing laundry',
+            'Bathing',
             # 'Watching TV',
             # 'Preparing breakfast',
         ]
@@ -2739,6 +2739,7 @@ while True:
         print(f"tick = {eng.tick}")
         print(f"hashid = {eng.network.hash_id}")
         # print(f"progress = {(eng.tick - start) / (end - start) * 100 : .1f}%")
+        print(f"inputs = {len([x for x in eng.network.neurones if eng.network.neurones[x].level == 0])}")
         print(f"neurones = {len(eng.network.neurones)}")
         print(f"synapses = {len(eng.network.synapses)}")
         print(f"bindings = {eng.network.params['BindingCount']}")
