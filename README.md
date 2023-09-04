@@ -1,6 +1,8 @@
-(CURRENTLY UNDER FURTHER DEVELOPMENTS - MAY 2023)
+(CURRENTLY UNDER FURTHER DEVELOPMENTS - SEPTEMBER 2023)
 
-NSSN - Neuro-symbolic Spiking Network, NSSN.
+**LSNN - Liquid Spiking Neural Networks.
+Formerly, NSSN - Neuro-symbolic Spiking Network, NSSN.**
+
 
 A pattern discovery algorithm with structurally dynamic spiking neural networks.
 
