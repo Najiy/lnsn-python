@@ -505,8 +505,7 @@ def stream(streamfile, trace=True):
     #     inputs[i] = [v]
     # input(inputs)
 
-    filecontent = json.loads(
-        open(f"dataset{pathdiv}{streamfile}.json", "r").read())
+    filecontent = json.loads(open(f"dataset{pathdiv}{streamfile}.json", "r").read())
 
     interv = filecontent["interval"]
     inputs = filecontent["activity_stream"]
@@ -565,10 +564,16 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
 
         row = line.split(",")
         # print(row)
+        # eng.meta[row[0]] = {
+        #     "min": float(row[9]),
+        #     "max": float(row[10]),
+        #     "res": float(eng.network.params["DefaultEncoderResolution"]),
+        # }
+
         eng.meta[row[0]] = {
-            "min": float(row[9]),
-            "max": float(row[10]),
-            "res": float(eng.network.params["DefaultEncoderResolution"]),
+            "min": float(row[1]),
+            "max": float(row[2]),
+            "res": float(row[3]),
         }
 
         # eng.meta[row[0]] = {
@@ -1472,9 +1477,9 @@ while True:
         # priories = int(input("first priories sequence (length): "))
 
         include_keys = [
-            'Bathing',
-            # 'Watching TV',
-            # 'Preparing breakfast',
+            # 'Going out for entertainment',
+            'Lawnwork',
+            # 'Putting away laundry',
         ]
 
         # include_keys = [x for x in data.keys()]
@@ -2169,7 +2174,6 @@ while True:
         # plt.grid(True)
 
         plt.show()
-
 
     if command[0] in ["tracepaths", "trace", "traces", "paths", "path"]:
         limits = float(command[1])

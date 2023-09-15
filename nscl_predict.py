@@ -631,20 +631,23 @@ class NSCLPredict:
 
         # for i in neurones.values():
         #     print(i.name)
+        try:
+            for rsyn in neurones[name].rsynapses:
+                mapping = f'{rsyn}->{name}'
+                wgt = eng.network.synapses[mapping].wgt
+                tacc = deepcopy(acc)
+                tacc.append(wgt)
+                primes[mapping] = tacc
+                levels[mapping] = level-1
 
-        for rsyn in neurones[name].rsynapses:
-            mapping = f'{rsyn}->{name}'
-            wgt = eng.network.synapses[mapping].wgt
-            tacc = deepcopy(acc)
-            tacc.append(wgt)
-            primes[mapping] = tacc
-            levels[mapping] = level-1
+                nprimes, nlevels = NSCLPredict.traceProductWeights(
+                    rsyn, eng, primes, tacc, level-1)
 
-            nprimes, nlevels = NSCLPredict.traceProductWeights(
-                rsyn, eng, primes, tacc, level-1)
-
-            primes = mergeDictionary(primes, nprimes)
-            levels = mergeDictionary(levels, nlevels)
+                primes = mergeDictionary(primes, nprimes)
+                levels = mergeDictionary(levels, nlevels)
+        except KeyError as ke:
+            print(f'key error: {ke} (enter yo continue)')
+            # input()
 
         return primes, levels
 

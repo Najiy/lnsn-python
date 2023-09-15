@@ -197,6 +197,11 @@ class NSCLAlgo:
                 if len(a_set) > 1:
                     a_set = sortbypotentials(a_set)
                     post_new = f"CMP({','.join(a_set)})"
+
+                    # if post_new == 'CMP(62~1-2,96~0-1)':
+                    #     print('Stuck here - creating new symbol')
+                    #     input()
+
                     if post_new not in neurones.keys():
                         n = NSCLAlgo.new_NSymbol(
                             eng,
