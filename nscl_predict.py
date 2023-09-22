@@ -19,6 +19,7 @@ def mergeDictionary(dict_1, dict_2):
             dict_3[key] = [value, dict_1[key]]
     return dict_3
 
+
 class NSCLPredict:
 
     def infer_once_unfolding(eng, datainput, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2):
@@ -110,7 +111,8 @@ class NSCLPredict:
             # print('pscorewindow', pscorewindow)
             # print('pscoreunified', pscorewindowunfied)
             # print('ptimes', ptimes)
-            datainput = [x[0] for x in pscorewindowunfied if x[1] > refractory_input_threshold]
+            datainput = [x[0] for x in pscorewindowunfied if x[1]
+                         > refractory_input_threshold]
             predictions = deepcopy(pscorewindowunfied)
 
             tick += 1
@@ -127,11 +129,10 @@ class NSCLPredict:
         # pp.pprint(datainputs)
         # pp.pprint(pscores)
 
-
         _pscores, _datainput, _tick, _predictions = feed_once(
             datainput, tick, propagation_count=propagation_count, divergence=divergence, refractoryperiod=refractoryperiod, refractory_coeff=eng.network.params['InferRefractoryCoefficient'], refractory_input_threshold=eng.network.params['InferRefractoryInputThreshold'])
-        pscores, datainput, tick, predictions = (_pscores, _datainput, _tick, _predictions)
-
+        pscores, datainput, tick, predictions = (
+            _pscores, _datainput, _tick, _predictions)
 
         pdistinct = {}
 
@@ -151,9 +152,7 @@ class NSCLPredict:
 
         return pscores, datainput, tick, predictions, pdistinct
 
-
-
-    def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2, ctxacc= []):
+    def infer_unfolding(eng, datainputs, pticks=10, reset_potentials=True, propagation_count=20, divergence=3, refractoryperiod=2, ctxacc=[]):
 
         tick = min(list(datainputs.keys()))
 
@@ -213,8 +212,6 @@ class NSCLPredict:
                         except:
                             continue
 
-        
-
             # high = max(pscores.keys())
             # pscores = {high:pscores[high]}
 
@@ -223,7 +220,7 @@ class NSCLPredict:
 
             return pscores, datainputs, ctxacc, tick, (r, e, a)
 
-        def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001,ctxacc= [], reap=([], [], [], [])):
+        def feed_once(datainputs, tick, pscores={}, propagation_count=propagation_count, divergence=1, refractoryperiod=2, predictions={}, refractory_coeff=0.0001, refractory_input_threshold=0.0001, ctxacc=[], reap=([], [], [], [])):
 
             times = list(datainputs.keys())
             times.sort()
@@ -324,7 +321,8 @@ class NSCLPredict:
             # print('pscorewindow', pscorewindow)
             # print('pscoreunified', pscorewindowunfied)
             # print('ptimes', ptimes)
-            datainputs[max(ptimes)] = [x[0] for x in pscorewindowunfied if x[1] > refractory_input_threshold]
+            datainputs[max(ptimes)] = [
+                x[0] for x in pscorewindowunfied if x[1] > refractory_input_threshold]
             predictions[max(ptimes)] = deepcopy(pscorewindowunfied)
 
             tick += 1
@@ -337,7 +335,7 @@ class NSCLPredict:
         predictions = {}
 
         pscores, datainputs, tick, ctxacc, reap = feed_all(
-            datainputs, pscores={}, propagation_count=propagation_count,ctxacc=ctxacc)
+            datainputs, pscores={}, propagation_count=propagation_count, ctxacc=ctxacc)
         # pp.pprint(datainputs)
         # pp.pprint(pscores)
 
@@ -369,7 +367,6 @@ class NSCLPredict:
         #     for k in pdisttemp[t]:
         #         pdistinct[t].append((k, pdisttemp[t][k]))
         #     pdistinct[t].sort(key=lambda x: x[1], reverse=True)
-
 
         pdistinct = {}
 
@@ -667,8 +664,8 @@ class NSCLPredict:
     def primeProductWeights(name, eng, ratio=True):
         traceWeights, traceLevels = NSCLPredict.traceProductWeights(name, eng)
         primeProducts = [(x.split('->')[0], NSCLPredict.myprod(traceWeights[x]), traceLevels[x])
-                         for x in traceWeights if 'CMP' not in x.split('->')[0] 
-                        #  and eng.network.neurones[x.split('->')[1]].refractory > 0
+                         for x in traceWeights if 'CMP' not in x.split('->')[0]
+                         #  and eng.network.neurones[x.split('->')[1]].refractory > 0
                          ]
         result = {}
 
@@ -686,3 +683,57 @@ class NSCLPredict:
                     result[r] = (0, result[r][1])
 
         return result
+
+    def primeProductsWeightsAll(fname, eng):
+
+        # Data format:
+        # [
+        #   {
+        #     inbound: 72633,
+        #     outbound: 74735,
+        #     from: {
+        #       name: '19th St. Oakland (19TH)',
+        #       coordinates: [-122.269029, 37.80787]
+        #     },
+        #     to: {
+        #       name: '12th St. Oakland City Center (12TH)',
+        #       coordinates: [-122.271604, 37.803664]
+        #   },
+        #   ...
+        # ]
+
+        synapses = eng.network.synapses
+
+        data = {}
+        for n in eng.network.neurones:
+            
+            if "CMP" in n:
+                continue
+
+            (sensor, rang) = n.split('~')
+
+            if sensor not in data:
+                data[sensor] = {}
+
+            fsynapses = eng.network.neurones[n].fsynapses
+
+            for s in fsynapses:
+                # print(sensor,n, s)
+                primes = NSCLPredict.primeProductWeights(s, eng)
+
+                for p in primes:
+                    if p == n:
+                        continue
+                    if f"{rang}" not in data[sensor]:
+                        data[sensor][f"{rang}"] = {}
+                    if p not in data[sensor][f"{rang}"]:
+                        (toSensor, toRang) = p.split('~')
+                        vector = {'sensor':sensor, 'via': s, 'pweight': primes[p][0], 'from':{'name': sensor, 'range': rang},'to': {'name': toSensor, 'range': toRang, 'toffset': 1+ primes[p][1]}}
+                        data[sensor][f"{rang}"][p] = vector
+
+        pp.pprint(data[sensor])    
+        input()
+
+        with open(f"./states/{fname}.json", "w+") as fp:
+            json.dump(data, fp)
+

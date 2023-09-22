@@ -222,6 +222,7 @@ class NSCL:
                     self.params['RefractoryPeriod'] = reverb_window
 
             return binding_window, refractory_period, reverberating, reverb_window
+        
 
     class Engine:
         def __init__(self, network=None, meta={}, algorithm=None) -> None:

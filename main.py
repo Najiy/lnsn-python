@@ -1265,6 +1265,9 @@ while True:
         print(" streaming csv dataset as input - %s" % (command[1]))
         csvstream(command[1], command[2], False, command[3], epoch)
 
+    if command[0] == "primeproducts":
+        res = npredict.primeProductsWeightsAll(command[1], eng=eng)
+
     if command[0] == "jstream_test":
         data = jstream_test('activities_dict.json')
         keys = data.keys()
