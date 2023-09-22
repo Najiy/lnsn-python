@@ -1,6 +1,6 @@
 (CURRENTLY UNDER FURTHER DEVELOPMENTS - SEPTEMBER 2023)
 
-**LSNN - Liquid Spiking Neural Networks.**
+**LNSN - Liquid Neurosymbolic Spiking Networks.**
 
 Formerly, NSSN - Neuro-symbolic Spiking Network, NSSN.
 
