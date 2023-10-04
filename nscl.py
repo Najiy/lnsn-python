@@ -336,6 +336,12 @@ class NSCL:
             del self.network.neurones[name]
             return delneurone
 
+        def remove_neurone_chain(self, name) -> bool:
+            ns = [x for x in self.network.neurones if name in x]
+            for n in ns:
+                self.remove_neurone(n)
+
+
         def reset_potentials(self):
             for n in self.network.neurones:
                 self.network.neurones[n].potential = 0

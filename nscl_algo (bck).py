@@ -376,13 +376,6 @@ class NSCLAlgo:
         for n in nlist:
             eng.remove_neurone(n)
 
-        syn_capacity = eng.network.params["SynapseCapacity"]
-        eng.network.synapses.sort(key=lambda x: x.wgt, reverse=True)
-        syns = eng.network.synapses[syn_capacity:]
-
-        for syn in syns:
-            eng.remove_neurone_chain(syn.fref)
-
         return (
             # "trace1": [neurones[n].potential for n in neurones],
             reinforce_synapse,

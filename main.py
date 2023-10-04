@@ -2700,6 +2700,9 @@ while True:
         print(" exporting graphs")
         graphout(eng)
 
+    if command[0] == "printn":
+        pprint.pprint(eng.network.neurones)
+
     if command[0] == "save":
         # if len(command) > 1:
         print(f" Savestate({command[1]})")
@@ -2735,6 +2738,13 @@ while True:
 
     if command[0] == "avg_wgt_f":
         print(f" neurone {command[1]} = {eng.network.avg_wgt_f(command[1])}")
+
+    if command[0] == "removen":
+        # try:
+        eng.remove_neurone_chain(command[1])
+        print(f'removed {command[1]}')
+        # except:
+        #     print(F'FAILED to remove {command[1]}')
 
     if command[0] == "info":
         clear()
