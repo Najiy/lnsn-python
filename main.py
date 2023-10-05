@@ -2201,6 +2201,17 @@ while True:
         print("composite", neurone)
         pp.pprint(npredict.back_trace(propslvl, neurone))
 
+    if command[0] == "synbin":
+        synwgt = [eng.network.synapses[x].wgt for x in eng.network.synapses]
+        # counts, bins = np.histogram(synwgt,bins=10)
+        # sns.histplot(data=counts, bins=bins)
+        plt.hist(synwgt, bins=10)
+        plt.xticks(np.arange(0, 1, step=0.1))  # Set label locations.
+        plt.xlabel("Weights")
+        plt.ylabel("Counts")
+        # plt.
+        plt.show()
+
     if command[0] == "infunfold":
         def inputDef(prompt, defval, casting):
             x = input(prompt)
