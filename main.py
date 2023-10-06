@@ -2211,6 +2211,7 @@ while True:
         plt.ylabel("Counts")
         # plt.
         plt.show()
+        # check
 
     if command[0] == "infunfold":
         def inputDef(prompt, defval, casting):
