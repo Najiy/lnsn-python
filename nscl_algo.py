@@ -374,7 +374,7 @@ class NSCLAlgo:
         ]  # useless lol
 
         for n in nlist:
-            eng.remove_neurone(n)
+            eng.remove_neurone_chain(n)
 
         syn_capacity = eng.network.params["SynapseCapacity"]
         eng.network.synapses.sort(key=lambda x: x.wgt, reverse=True)
@@ -549,7 +549,16 @@ class NSCLAlgo:
         ]  # useless lol
 
         for n in nlist:
-            eng.remove_neurone(n)
+            eng.remove_neurone_chain(n)
+
+        # syn_capacity = eng.network.params["SynapseCapacity"]
+        # syns_list = [(s, eng.network.synapses[s].wgt) for s in eng.network.synapses]
+        # syns_list.sort(key=lambda s: s[1], reverse=True)
+        # syns_list = syns_list[syn_capacity:]
+
+        # for syn in syns_list:
+        #     eng.remove_neurone_chain(syn[0])
+
 
         return (
             # "trace1": [neurones[n].potential for n in neurones],

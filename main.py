@@ -686,6 +686,14 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
         try:
             if eng.prune == 0:
                 eng.prune = eng.network.params["PruneInterval"]
+                
+                # syn_capacity = eng.network.params["SynapseCapacity"]
+                # syns_list = [(s, eng.network.synapses[s].wgt) for s in eng.network.synapses]
+                # syns_list.sort(key=lambda s: s[1], reverse=True)
+                # syns_list = syns_list[syn_capacity:]
+
+                # for syn in syns_list:
+                #     eng.remove_neurone_chain(syn[0])
             eng.prune -= 1
 
             if eng.tick % 5000 == 0 or eng.tick == maxit or eng.prune == 0:
@@ -709,6 +717,8 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
                 print(f"npruned = {len(eng.npruned)}")
                 print(f"spruned = {len(eng.spruned)}")
                 print(f"prune_ctick = {eng.prune}")
+
+                print(f"now = {datetime.now().isoformat(timespec='minutes')}")
                 print(" ###########################")
                 print()
 
@@ -746,6 +756,15 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
 
             if eng.tick in save_range:
                 save_range.remove(eng.tick)
+
+                syn_capacity = eng.network.params["SynapseCapacity"]
+                syns_list = [(s, eng.network.synapses[s].wgt) for s in eng.network.synapses]
+                syns_list.sort(key=lambda s: s[1], reverse=True)
+                syns_list = syns_list[syn_capacity:]
+
+                for syn in syns_list:
+                    eng.remove_neurone_chain(syn[0])
+
                 # os.mkdir(f'state{pathdiv}{fname}')
                 # eng.save_state(f'{fname}{pathdiv}{eng.tick}')
                 eng.save_state(f"{fname}_{eng.tick}")
