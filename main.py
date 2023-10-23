@@ -757,13 +757,13 @@ def csvstream(streamfile, metafile, trace=False, fname="default", iterations=1):
             if eng.tick in save_range:
                 save_range.remove(eng.tick)
 
-                syn_capacity = eng.network.params["SynapseCapacity"]
-                syns_list = [(s, eng.network.synapses[s].wgt) for s in eng.network.synapses]
-                syns_list.sort(key=lambda s: s[1], reverse=True)
-                syns_list = syns_list[syn_capacity:]
+                # syn_capacity = eng.network.params["SynapseCapacity"]
+                # syns_list = [(s, eng.network.synapses[s].wgt) for s in eng.network.synapses]
+                # syns_list.sort(key=lambda s: s[1], reverse=True)
+                # syns_list = syns_list[syn_capacity:]
 
-                for syn in syns_list:
-                    eng.remove_neurone_chain(syn[0])
+                # for syn in syns_list:
+                #     eng.remove_neurone_chain(syn[0])
 
                 # os.mkdir(f'state{pathdiv}{fname}')
                 # eng.save_state(f'{fname}{pathdiv}{eng.tick}')
@@ -2231,6 +2231,15 @@ while True:
         # plt.
         plt.show()
         # check
+
+    if command[0] == "trimsyscap":
+        syn_capacity = eng.network.params["SynapseCapacity"]
+        syns_list = [(s, eng.network.synapses[s].wgt) for s in eng.network.synapses]
+        syns_list.sort(key=lambda s: s[1], reverse=True)
+        syns_list = syns_list[syn_capacity:]
+
+        for syn in syns_list:
+            eng.remove_neurone_chain(syn[0])
 
     if command[0] == "infunfold":
         def inputDef(prompt, defval, casting):
