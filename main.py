@@ -2224,7 +2224,7 @@ while True:
         synwgt = [eng.network.synapses[x].wgt for x in eng.network.synapses]
         # counts, bins = np.histogram(synwgt,bins=10)
         # sns.histplot(data=counts, bins=bins)
-        plt.hist(synwgt, bins=10)
+        plt.hist(synwgt, bins=10,color = "lightblue", ec="red")
         plt.xticks(np.arange(0, 1, step=0.1))  # Set label locations.
         plt.xlabel("Weights")
         plt.ylabel("Counts")

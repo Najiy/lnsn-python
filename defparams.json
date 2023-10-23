@@ -2,7 +2,7 @@
     "BindingCount": 2,
     "PropagationLevels": 3,
     "PruneInterval": 200,
-    "SynapseCapacity": 1000000,
+    "SynapseCapacity": 200000,
     "PruningThreshold": 0.2,
     "BindingThreshold": 0.35,
     "DownPotentialFactor": 0.2,
