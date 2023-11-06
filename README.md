@@ -4,7 +4,7 @@
 
 Formerly, NSSN - Neuro-symbolic Spiking Network, NSSN.
 
-LNSN is a pattern discovery algorithm with structurally dynamic spiking neural networks. A graph neural network with spiking neurones inspired attention mechanisms for nodes.
+LNSN is a pattern discovery algorithm with structurally dynamic spiking neural networks. A graph neural network with spiking neurones inspired attention mechanisms for nodes. Potential time-series prediction algorithm that can make multiple candidate inferences per time step.
 
     CLI mode:
         run main.py
